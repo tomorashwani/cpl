@@ -1,0 +1,367 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:u="sap.ui.unified" xmlns:l="sap.ui.layout"
+	xmlns:form="sap.ui.layout.form">
+	<Dialog id="filter">
+		<customHeader>
+			<Bar >
+				<contentLeft></contentLeft>
+				<contentMiddle>
+					<Title text="Search and Filter"></Title>
+				</contentMiddle>
+				<contentRight></contentRight>
+			</Bar>
+		</customHeader>
+		<content >
+			<Panel id="idInputPanel" headerText="" expandable="false" expanded="true" visible="true">
+				<content>
+					<l:Grid containerQuery="true">
+						<!--<SearchField width="100%">
+							<layoutData>
+								<l:GridData span="XL12 L12 M12 S12"/>
+							</layoutData>
+						</SearchField>-->
+						<!--visible="{pViewModel>/brandsVisible}"-->
+						<VBox id="ffVBox" visible="{pViewModel>/brandsVisible}">
+							<Label text="Brand"></Label>
+							<ComboBox id="brandFilter" items="{pViewModel>/brands}" change="onBrandChange">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>brand}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/fibersVisible}">
+							<Label text="Fiber"></Label>
+							<ComboBox id="fiberFilter" items="{pViewModel>/fibers}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>fiber}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/fiberBrandsVisible}">
+							<Label text="Fiber Brand"></Label>
+							<ComboBox id="fiberBrandFilter" items="{pViewModel>/fiberBrands}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>fiberBrand}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/constructionsVisible}">
+							<Label text="Construction"></Label>
+							<ComboBox id="constructionFilter" items="{pViewModel>/constructions}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>construction}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/weightsVisible}">
+							<Label text="Weight"></Label>
+							<ComboBox id="weightFilter" items="{pViewModel>/weights}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>weight}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/collectionsVisible}">
+							<Label text="Collection"></Label>
+							<ComboBox id="collectionFilter" items="{pViewModel>/collections}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>collection}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/displayVehiclesVisible}">
+							<Label text="Display Vechicle"></Label>
+							<ComboBox id="vehicleFilter" items="{pViewModel>/displayVehicles}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>vehicle}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/categoriesVisible}">
+							<Label text="Category"></Label>
+							<ComboBox id="categoryFilter" items="{pViewModel>/categories}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>category}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/densityVisible}">
+							<Label text="Density"></Label>
+							<ComboBox id="densityFilter" items="{pViewModel>/density}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>density}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/gaugeVisible}">
+							<Label text="Gauge"></Label>
+							<ComboBox id="gaugeFilter" items="{pViewModel>/gauge}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>gauge}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/sizeVisible}">
+							<Label text="Size"></Label>
+							<ComboBox id="sizeFilter" items="{pViewModel>/size}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>size}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/antimicrobialVisible}">
+							<Label text="Antimicrobial"></Label>
+							<ComboBox id="antimicrobialFilter" items="{pViewModel>/antimicrobial}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>antimicrobial}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/moistureBarriersVisible}">
+							<Label text="Moisture Barriers"></Label>
+							<ComboBox id="moBarrierFilter" items="{pViewModel>/moistureBarriers}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>moBarrier}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/localStockVisible}">
+							<Label text="Local Stock"></Label>
+							<ComboBox id="stockFilter" items="{pViewModel>/localStock}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>stock}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/segmentsVisible}">
+							<Label text="Segments"></Label>
+							<ComboBox id="segmentFilter" items="{pViewModel>/segments}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>segment}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/widthsVisible}">
+							<Label text="Width"></Label>
+							<ComboBox id="widthFilter" items="{pViewModel>/widths}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>width}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/speciesVisible}">
+							<Label text="Species"></Label>
+							<ComboBox id="speciesFilter" items="{pViewModel>/species}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>Species}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/texturesVisible}">
+							<Label text="Textures"></Label>
+							<ComboBox id="texturesFilter" items="{pViewModel>/textures}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>texture}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/featuresVisible}">
+							<Label text="Feature"></Label>
+							<ComboBox id="featureFilter" items="{pViewModel>/features}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>feature}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/coresVisible}">
+							<Label text="Core"></Label>
+							<ComboBox id="coreFilter" items="{pViewModel>/cores}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>core}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/wearLayerVisible}">
+							<Label text="Wear Layer"></Label>
+							<ComboBox id="wearLayerFilter" items="{pViewModel>/wearLayer}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>layer}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/installationVisible}">
+							<Label text="Installation"></Label>
+							<ComboBox id="installationFilter" items="{pViewModel>/installation}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>installation}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/backingVisible}">
+							<Label text="Backing"></Label>
+							<ComboBox id="backingFilter" items="{pViewModel>/backing}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>backing}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/descriptionsVisible}">
+							<Label text="Description"></Label>
+							<ComboBox id="descFilter" items="{pViewModel>/descriptions}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>desc}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/applicationVisible}">
+							<Label text="Application"></Label>
+							<ComboBox id="appFilter" items="{pViewModel>/application}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>app}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/technologyVisible}">
+							<Label text="Technology"></Label>
+							<ComboBox id="techFilter" items="{pViewModel>/technology}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>tech}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<VBox visible="{pViewModel>/thicknessVisible}">
+							<Label text="Thickness"></Label>
+							<ComboBox id="thickFilter" items="{pViewModel>/thickness}">
+								<core:Item key="{pViewModel>key}" text="{pViewModel>thick}"/>
+								<layoutData>
+									<OverflowToolbarLayoutData priority="Low"/>
+								</layoutData>
+							</ComboBox>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>
+						<!--	<VBox>
+							<Label text="Display Vehicle"></Label>
+							<Select forceSelection="true" selectedKey="" items="" editable="false" width="70%">
+								<core:Item key="No" text="No Available Options"/>
+							</Select>
+							<layoutData>
+								<l:GridData span="XL4 L4 M4 S12"/>
+							</layoutData>
+						</VBox>-->
+					</l:Grid>
+				</content>
+			</Panel>
+		</content>
+		<beginButton>
+			<Button text="Clear All" press="handlePressClose"/>
+		</beginButton>
+		<endButton>
+			<Button text="Search" type="Emphasized" press="handlePressClose"/>
+		</endButton>
+	</Dialog>
+</core:FragmentDefinition>

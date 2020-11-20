@@ -1,0 +1,120 @@
+/* Enter your custom styles here */
+div#container-cpl---master--masterPage-pageTitle-left-inner {
+    width: 100%;
+}
+.sapFDynamicPageTitleHeading-CTX.sapFDynamicPageTitleMainHeadingInner , .sapFDynamicPageTitleMainHeading{
+    width: 100%;
+}
+#container-cpl---master--list{
+	/*height:500px;*/
+	height: 100%;
+	overflow:auto;
+}
+.clrBlue.sapMLabel {
+    color: blue;
+    font-weight: bold;
+    font-size: 15px;
+}
+.clrRed.sapMLabel {
+	color: red;
+	font-weight: bold;
+    font-size: 15px;
+}
+.clrGreen.sapMLabel {
+	color: green;
+	font-weight: bold;
+    font-size: 15px;
+}
+.clrPurple.sapMLabel {
+	color: purple;
+	font-weight: bold;
+    font-size: 15px;
+}
+.clspopover.sapMPopover.sapMPopoverWithoutBar .sapMPopoverCont,
+.sapMPopover .sapMIBar.sapMHeader-CTX {
+    background-color: #17335A;
+    padding: 5px;
+    border: 3px solid white;
+}
+
+.clspopovertext1.sapMText {
+    color: black;
+    padding: 5px 6px 5px 10px;
+    background-color: white;
+    /* margin: 10px; */
+    height: 25px;
+    width: 30px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.clspopovertext2.sapMText {
+    color: white;
+    padding-top: 5px;
+}
+/*Start of Pratik  04-11-2020 */
+.clssearchmenu
+{
+	margin-top:20px;
+	margin-right:10px;
+}
+/*End of Pratik  04-11-2020*/
+
+/* Start of Pratik 14-11-2020 for Edit price*/
+.clsbar
+{
+	box-shadow: none;
+}
+.clseditpopuptext
+{
+	font-weight:bold;
+	font-size:20px;
+	color:black !important;
+}
+.clsaccesslevel
+{
+	box-shadow: none;
+	padding-top:30px;
+}
+.clstitlejustification
+{
+	font-weight:bold;
+	padding-top: 10px;
+    padding-left: 15px;
+}
+.clstxtcomments
+{
+	padding-left: 15px;
+	padding-right: 15px;
+}
+.clserrmsg
+{
+	color:red;
+	padding-left: 15px;
+}
+
+.clsmenuitem {
+    background-color: black;
+    color: white;
+}
+
+.clsmenuitem.sapUiMnu .sapUiMnuLst .sapUiMnuItm {
+    border: 1px solid #17335A;
+    background-color: #ffffff;
+    color: #17335A;
+}
+
+.clsmenuitem.sapUiMnu .sapUiMnuItmIco .sapUiIcon {
+    color: #17335A;
+}
+
+.clsremovepopup.sapMDialog.sapMPopup-CTX>header .sapMHeader-CTX {
+    background-color: #0a6ed1;
+}
+
+.clsremovepopup.sapMDialog>header.sapMDialogTitle .sapMTitle {
+    color: #ffffff;
+}
+
+.clsremovepopup.sapMDialog.sapMMessageBoxQuestion .sapMDialogIcon.sapUiIcon {
+    color: #ffffff;
+}

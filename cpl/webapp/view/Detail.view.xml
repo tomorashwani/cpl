@@ -1,0 +1,417 @@
+<mvc:View controllerName="cf.cpl.controller.Detail" xmlns="sap.m" xmlns:semantic="sap.f.semantic" xmlns:viz="sap.viz.ui5.controls"
+	xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:mvc="sap.ui.core.mvc" xmlns:viz.feeds="sap.viz.ui5.controls.common.feeds"
+	xmlns:f="sap.f" xmlns:viz.data="sap.viz.ui5.data">
+	<semantic:SemanticPage id="detailPage" busy="{detailView>/busy}" busyIndicatorDelay="{detailView>/delay}" visible="true">
+		<semantic:titleHeading>
+			<Title text="Details" level="H2"/>
+		</semantic:titleHeading>
+		<semantic:headerContent>
+			<!--<FlexBox wrap="Wrap" fitContainer="true" alignItems="Stretch">-->
+			<l:Grid containerQuery="true" defaultSpan="XL2 L2 M3 S12">
+				<f:Avatar displaySize="L" displayShape="Square" class="">
+				</f:Avatar>
+				<VBox id="tlVB" justifyContent="Center" class="sapUiSmallMarginBeginEnd">
+					<!--<ObjectIdentifier title="Mstr#" text="2B47" titleActive="false" class="dHeaderObjAtr"/>
+					<ObjectIdentifier title="Master Style" text="Astonishing Style" class="dHeaderObjAtrSec"/>-->
+					<layoutData>
+						<l:GridData span="XL3 L3 M3 S12"/>
+					</layoutData>
+				</VBox>
+				<VBox id="tcVB" justifyContent="Center" class="sapUiSmallMarginBeginEnd">
+					<!--<ObjectIdentifier title="Sell#" text="PM348" class="dHeaderObjAtr"/>
+					<ObjectIdentifier title="Selling Style" text="Absolute Best" class="dHeaderObjAtrSec"/>-->
+					<layoutData>
+						<l:GridData span="XL3 L3 M3 S12"/>
+					</layoutData>
+				</VBox>
+				<VBox id="trVB" justifyContent="Center" class="sapUiSmallMarginBeginEnd">
+					<!--<ObjectIdentifier title="Brand" text="ALC" class="dHeaderObjAtr"/>
+					<ObjectIdentifier title="Wt" text="22" class="dHeaderObjAtrSec"/>-->
+					<layoutData>
+						<l:GridData span="XL4 L4 M3 S12"/>
+					</layoutData>
+				</VBox>
+			</l:Grid>
+			<!--</FlexBox>-->
+		</semantic:headerContent>
+		<semantic:content>
+			<IconTabBar id="idIconTabBarMulti" expanded="{device>/isNoPhone}" class="sapUiResponsiveContentPadding">
+				<items>
+					<IconTabFilter text="Detail">
+						<Panel id="priPanel" headerText="Primary Information" width="100%" height="auto" expanded="true" expandable="true">
+							<content>
+								<l:Grid id="primaryGrid" containerQuery="true" defaultSpan="XL3 L4 M4 S12">
+									<!--<ObjectAttribute title="Inventory Style" text="Classic Vision (27465)"/>
+									<ObjectAttribute title="Master Style" text="Classic Vision (1M37)"/>
+									<ObjectAttribute title="Selling Style" text="Diamond Twist (1M41)"/>
+									<ObjectAttribute title="Brand" text="ALC"/>
+									<ObjectAttribute title="Weight" text="28"/>-->
+								</l:Grid>
+							</content>
+						</Panel>
+						<Panel headerText="Secondary Information" width="100%" height="auto" expanded="true" expandable="true">
+							<content>
+								<l:Grid id="secondaryGrid" containerQuery="true" defaultSpan="XL3 L4 M4 S12">
+									<!--<ObjectAttribute title="Fiber" text="Nylon"/>
+									<ObjectAttribute title="Fiber Brand" text="Colorstrand"/>
+									<ObjectAttribute title="Construction" text="Cut Pile Graphic"/>
+									<ObjectAttribute title="Brand" text="Aladdin Commercial"/>
+									<ObjectAttribute title="# of Colors" text="16"/>
+									<ObjectAttribute title="Collection" text=""/>
+									<ObjectAttribute title="Size" text="12 feet wide"/>
+									<ObjectAttribute title="Backing" text="Abac - Weldlok"/>
+									<ObjectAttribute title="Std Roll Size" text="150"/>
+									<ObjectAttribute title="Pattern Repeat" text="0.8'W X 0.83'L"/>
+									<ObjectAttribute title="Pricing UOM" text="SY"/>
+									<ObjectAttribute title="Intro Date" text="1/4/10"/>
+									<ObjectAttribute title="Display Vehicle" text=""/>-->
+								</l:Grid>
+							</content>
+						</Panel>
+						<Panel headerText="Pricing Information" width="100%" height="auto" expanded="true" expandable="true">
+							<content>
+								<l:Grid id="pricingGrid" containerQuery="true" defaultSpan="XL3 L4 M4 S12">
+									<!--<ObjectAttribute title="TM1 Price" text="$9.81 / $10.80"/>
+									<ObjectAttribute title="TM2 Price" text="$9.45 / $10.44"/>
+									<ObjectAttribute title="TM3 Price" text="$9.09 / $10.08"/>
+									<ObjectAttribute title="Price Zone" text="209"/>-->
+								</l:Grid>
+							</content>
+						</Panel>
+					</IconTabFilter>
+					<!--<IconTabFilter text="Accessories">
+						<Panel headerText="Adhesives" width="100%" height="auto" expanded="true" expandable="true">
+							<content>
+								<Table width="auto" items="" updateFinished=".onListUpdateFinished" noDataText="{i18n>detailLineItemTableNoDataText}"
+									busyIndicatorDelay="{detailView>/lineItemTableDelay}">
+									<columns>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Style #"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Name"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Product Style Number"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Style Name"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Size"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="ProductCode"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Part #"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="TM Price"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Brand"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Spread Rate"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="TM Price"/>
+										</Column>
+									</columns>
+									<items>
+										<ColumnListItem>
+											<cells>
+												<Text text="R0020"/>
+												<Text text=""/>
+												<Text text="R0020"/>
+												<Text text="Nubroadlok Prem Mult"/>
+												<Text text="4 Gallon"/>
+												<Text text=""/>
+												<Text text="R0020"/>
+												<Text text=""/>
+												<Text text="Aladcomm Non Cpt"/>
+												<Text text="5-10 SY/GAL"/>
+												<Text text=""/>
+											</cells>
+										</ColumnListItem>
+										<ColumnListItem>
+											<cells>
+												<Text text="R002K"/>
+												<Text text=""/>
+												<Text text="R002K"/>
+												<Text text="Nubroadlok Prem Mult"/>
+												<Text text="4 Gallon"/>
+												<Text text=""/>
+												<Text text="R002K"/>
+												<Text text=""/>
+												<Text text="Karastan"/>
+												<Text text="5-10 SY/GAL"/>
+												<Text text=""/>
+											</cells>
+										</ColumnListItem>
+									</items>
+								</Table>
+							</content>
+						</Panel>
+						<Panel headerText="Trims" width="100%" height="auto" expanded="true" expandable="true">
+							<content>
+								<Table width="auto" items="" updateFinished=".onListUpdateFinished" noDataText="{i18n>detailLineItemTableNoDataText}"
+									busyIndicatorDelay="{detailView>/lineItemTableDelay}">
+									<columns>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Colors"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Quarter Round"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Reducer (Overlap)"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Reducer (Flush)"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="T-Molding"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Baby Threshold"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Stairnose (Overlap)"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Stairnose (Flush)"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Instaform 5 in 1"/>
+										</Column>
+										<Column minScreenWidth="Tablet" demandPopin="true">
+											<Text text="Wood Filler"/>
+										</Column>
+									</columns>
+									<items>
+										<ColumnListItem>
+											<cells>
+												<Text text="Oak Butterscotch (22)"/>
+												<VBox>
+													<Text text="HQRTA-05072"/>
+													<Text text="$19.07"/>
+												</VBox>
+												<Text text="LREDF-05072"/>
+												<Text text=""/>
+												<VBox>
+													<Text text="HTMDA-05072"/>
+													<Text text="$37.07"/>
+												</VBox>
+												<Text text="LENDE-05072"/>
+												<Text text=""/>
+												<VBox>
+													<Text text="HFSTF-05072"/>
+													<Text text="$28.08"/>
+												</VBox>
+												<Text text=""/>
+												<Text text=""/>
+											</cells>
+										</ColumnListItem>
+										<ColumnListItem>
+											<cells>
+												<Text text="Oak Golden (20)"/>
+												<VBox>
+													<Text text="HQRTA-05162"/>
+													<Text text="$19.07"/>
+												</VBox>
+												<VBox>
+													<Text text="HREDF-05162"/>
+													<Text text="$21.04"/>
+												</VBox>
+												<Text text=""/>
+												<Text text="LCMDA-05162"/>
+												<VBox>
+													<Text text="HENDE-05162"/>
+													<Text text="$35.07"/>
+												</VBox>
+												<Text text=""/>
+												<VBox>
+													<Text text="HFSTF-05162"/>
+													<Text text="$28.08"/>
+												</VBox>
+												<Text text=""/>
+												<Text text=""/>
+											</cells>
+										</ColumnListItem>
+										<ColumnListItem>
+											<cells>
+												<Text text="Cherry Oak (42)"/>
+												<VBox>
+													<Text text="HQRTA-05503"/>
+													<Text text="$19.07"/>
+												</VBox>
+												<VBox>
+													<Text text="HREDC-05503"/>
+													<Text text="$37.07"/>
+												</VBox>
+												<Text text=""/>
+												<VBox>
+													<Text text="HTMDA-05503"/>
+													<Text text="$37.07"/>
+												</VBox>
+												<VBox>
+													<Text text="HENDD-05503"/>
+													<Text text="$34.57"/>
+												</VBox>
+												<Text text=""/>
+												<VBox>
+													<Text text="HFSTC-05503"/>
+													<Text text="$44.07"/>
+												</VBox>
+												<Text text=""/>
+												<Text text=""/>
+											</cells>
+										</ColumnListItem>
+									</items>
+								</Table>
+							</content>
+						</Panel>
+					</IconTabFilter>
+					<IconTabFilter text="Product Report">
+						<l:ResponsiveSplitter defaultPane="default" width="100%" height="100%">
+							<l:PaneContainer orientation="Vertical">
+								<l:SplitPane>
+									<Panel headerText="" height="100%">
+										<headerToolbar>
+											<Toolbar class="dChartHeaderTool">
+												<VBox>
+													<VBox class="dChartHeader">
+														<Text text="Belle Meade 2.25 (WSC27)" class="bChartUp"/>
+														<Title text="Price Records by Price Level" level="H2" class="bChartDown"/>
+													</VBox>
+													<HBox class="dChartHeaderHBox">
+														<VBox>
+															<Label text="Region:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="All" text="-All-"/>
+															</Select>
+														</VBox>
+														<VBox>
+															<Label text="District:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="All" text="-All-"/>
+															</Select>
+														</VBox>
+														<VBox>
+															<Label text="Territory:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="All" text="-All-"/>
+															</Select>
+														</VBox>
+													</HBox>
+												</VBox>
+											</Toolbar>
+										</headerToolbar>
+										<content>
+											<viz:Popover id="idPopOver"></viz:Popover>
+											<viz:VizFrame id="idVizFrame" uiConfig="{applicationSet:'fiori'}" width="100%" height="315px" vizType='column'>
+												<viz:dataset>
+													<viz.data:FlattenedDataset data="{chartModel>/Price}">
+														<viz.data:dimensions>
+															<viz.data:DimensionDefinition name="Current Price Level" value="{chartModel>PriceLevel}"/>
+														</viz.data:dimensions>
+														<viz.data:measures>
+															<viz.data:MeasureDefinition name="# of Price Records" value="{chartModel>PriceRecord}"/>
+														</viz.data:measures>
+													</viz.data:FlattenedDataset>
+												</viz:dataset>
+												<viz:feeds>
+													<viz.feeds:FeedItem id='valueAxisFeed' uid="valueAxis" type="Measure" values="# of Price Records"/>
+													<viz.feeds:FeedItem id='categoryAxisFeed' uid="categoryAxis" type="Dimension" values="Current Price Level"/>
+												</viz:feeds>
+											</viz:VizFrame>
+										</content>
+									</Panel>
+								</l:SplitPane>
+								<l:SplitPane class="">
+									<Panel id="panel2" headerText="" height="100%" class="">
+										<headerToolbar>
+											<Toolbar class="dChartHeaderTool">
+												<VBox>
+													<VBox class="dChartHeader">
+														<Text text="Belle Meade 2.25 (WSC27)" class="bChartUp"/>
+														<Title text="Net Sales by Price Level" level="H2" class="bChartDown"/>
+													</VBox>
+													<HBox class="dChartHeaderHBox">
+														<VBox>
+															<Label text="Region:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="All" text="-All-"/>
+															</Select>
+														</VBox>
+														<VBox>
+															<Label text="District:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="All" text="-All-"/>
+															</Select>
+														</VBox>
+														<VBox>
+															<Label text="Territory:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="All" text="-All-"/>
+															</Select>
+														</VBox>
+														<VBox>
+															<Label text="Period:"/>
+															<Select forceSelection="true" selectedKey="" items="" width="100%">
+																<core:Item key="R365" text="R365"/>
+															</Select>
+														</VBox>
+													</HBox>
+												</VBox>
+											</Toolbar>
+										</headerToolbar>
+										<content>
+											<viz:Popover id="idPopOver2"></viz:Popover>
+											<viz:VizFrame id="idVizFrame2" uiConfig="{applicationSet:'fiori'}" width="100%" height="315px" vizType='column'>
+												<viz:dataset>
+													<viz.data:FlattenedDataset data="{chartModel>/Sales}">
+														<viz.data:dimensions>
+															<viz.data:DimensionDefinition name="Selling Price Level" value="{chartModel>PriceLevel}"/>
+														</viz.data:dimensions>
+														<viz.data:measures>
+															<viz.data:MeasureDefinition name="Net Sales ($)" value="{chartModel>SalesRecord}"/>
+														</viz.data:measures>
+													</viz.data:FlattenedDataset>
+												</viz:dataset>
+												<viz:feeds>
+													<viz.feeds:FeedItem id='valueAxisFeed2' uid="valueAxis" type="Measure" values="Net Sales ($)"/>
+													<viz.feeds:FeedItem id='categoryAxisFeed2' uid="categoryAxis" type="Dimension" values="Selling Price Level"/>
+												</viz:feeds>
+											</viz:VizFrame>
+										</content>
+									</Panel>
+								</l:SplitPane>
+							</l:PaneContainer>
+						</l:ResponsiveSplitter>
+					</IconTabFilter>-->
+				</items>
+			</IconTabBar>
+		</semantic:content>
+		<!--Semantic ShareMenu Buttons-->
+		<!--<semantic:sendEmailAction>
+			<semantic:SendEmailAction
+				id="shareEmail"
+				press=".onSendEmailPress"/>
+		</semantic:sendEmailAction>-->
+		<semantic:closeAction>
+			<semantic:CloseAction id="closeColumn" press=".onCloseDetailPress"/>
+		</semantic:closeAction>
+		<semantic:fullScreenAction>
+			<semantic:FullScreenAction id="enterFullScreen"
+				visible="{= !${device>/system/phone} &amp;&amp; !${appView>/actionButtonsInfo/midColumn/fullScreen}}" press=".toggleFullScreen"/>
+		</semantic:fullScreenAction>
+		<semantic:exitFullScreenAction>
+			<semantic:ExitFullScreenAction id="exitFullScreen"
+				visible="{= !${device>/system/phone} &amp;&amp; ${appView>/actionButtonsInfo/midColumn/fullScreen}}" press=".toggleFullScreen"/>
+		</semantic:exitFullScreenAction>
+	</semantic:SemanticPage>
+	
+</mvc:View>

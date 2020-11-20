@@ -1,0 +1,31 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	xmlns:upload="sap.m.upload">
+	<Dialog title="Justification" contentWidth="500px" titleAlignment="Center" horizontalScrolling="false" afterClose="afterCloseJustifcation">
+		<VBox>
+			<l:HorizontalLayout>
+				<Title class="clstitlejustification" wrapping="true" text="Reason for Price to enter approval process"/>
+			</l:HorizontalLayout>
+			<Label id="lblreasonerrmsg" class="clserrmsg" text="*Complete this field" visible="false"/>
+			<l:HorizontalLayout>
+				<RadioButtonGroup id="rdbReason" select="onSelectionReason" valueState="None" class="sapUiSmallMarginBottom">
+					<RadioButton id="rdb1" groupName="Reason" text="Promotional Price"/>
+					<RadioButton id="rdb2" groupName="Reason" text="Stocking Price"/>
+					<RadioButton id="rdb3" groupName="Reason" text="Competitor Price Match"/>
+					<RadioButton id="rdb4" groupName="Reason" text="Promo Code"/>
+					<RadioButton id="rdb5" groupName="Reason" text="Other"/>
+				</RadioButtonGroup>
+			</l:HorizontalLayout>
+			<Input id="txtPromocode" visible="false" type="Text" class="clstxtcomments" textFormatMode="Key" showValueHelp="true" valueHelpRequest="_handleValueHelpPromocode"></Input>
+		</VBox>
+		<VBox>
+			<Label text="Detailed Comment:" class="clstxtcomments"/>
+			<TextArea id="txtComment" class="clstxtcomments" placeholder="Please Enter Comments" width="100%" rows="4"/>
+			<Label id="lblcommenterrmsg" class="clserrmsg" text="*Complete this field" visible="false"/>
+		</VBox>
+		<buttons>
+			<Button text="Back" type="Ghost" press="onBackJustification"/>
+			<Button text="Cancel" type="Reject" press="OnCancelJustification"/>
+			<Button text="Save" type="Emphasized" press="onSavePrice"/>
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

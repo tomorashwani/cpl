@@ -1,0 +1,72 @@
+ID: CPL_MTA
+_schema-version: '2.1'
+description: MTA Application for CPL
+parameters:
+  deploy_mode: html5-repo
+version: 0.0.1
+modules:
+  - name: cpl-mta-approuter
+    type: approuter.nodejs
+    path: cpl-mta-approuter
+    parameters:
+      disk-quota: 512M
+      memory: 512M
+    requires:
+      - name: CPL_MTA_html5_repo_runtime
+      - name: uaa_Mohawk_MTA
+      - name: dest_Mohawk_MTA
+      - name: usernode_api
+        group: destinations
+        properties:
+          name: usernode_api
+          url: '~{url}'
+          forwardAuthToken: true      
+  - name: CPL_MTA_ui_deployer
+    type: com.sap.html5.application-content
+    path: CPL_MTA_ui_deployer
+    requires:
+      - name: CPL_MTA_html5_repo_host
+    build-parameters:
+      requires:
+        - name: cpl
+          artifacts:
+            - './*'
+          target-path: resources/cpl
+  - name: cpl
+    type: html5
+    path: cpl
+    build-parameters:
+      builder: custom
+      commands:
+        - npm install
+        - npm run build
+      supported-platforms: []
+      build-result: dist
+      
+  - name: usernode
+    type: nodejs
+    path: usernode
+    provides:
+     - name: usernode_api
+       properties:
+          url: ${default-url}
+    properties:
+      UAA_SERVICE_NAME: uaa_Mohawk_MTA
+    requires:
+      - name: uaa_Mohawk_MTA      
+      
+resources:
+  - name: CPL_MTA_html5_repo_runtime
+    parameters:
+      service-plan: app-runtime
+      service: html5-apps-repo
+    type: org.cloudfoundry.managed-service
+  - name: CPL_MTA_html5_repo_host
+    parameters:
+      service-plan: app-host
+      service: html5-apps-repo
+    type: org.cloudfoundry.managed-service
+  - name: uaa_Mohawk_MTA
+    type: org.cloudfoundry.existing-service
+  - name: dest_Mohawk_MTA
+    type: org.cloudfoundry.existing-service

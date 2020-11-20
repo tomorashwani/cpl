@@ -1,0 +1,238 @@
+<mvc:View controllerName="cf.cpl.controller.Master" xmlns="sap.m" xmlns:semantic="sap.f.semantic" xmlns:f="sap.f" xmlns:core="sap.ui.core"
+	xmlns:l="sap.ui.layout" xmlns:mvc="sap.ui.core.mvc">
+	<semantic:SemanticPage id="masterPage" preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop"
+		visible="true">
+		<semantic:titleHeading>
+			<VBox>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="5rem"/>
+					</contentLeft>
+					<contentMiddle>
+						<core:Icon src="sap-icon://e-learning"></core:Icon>
+						<Title text="Customer Price List"/>
+					</contentMiddle>
+					<contentRight>
+						<SearchField id="searchField" showRefreshButton="false" search="onGlobalSearch" width="100%">
+							<layoutData>
+								<OverflowToolbarLayoutData minWidth="150px" maxWidth="240px" shrinkable="true" priority="NeverOverflow"/>
+							</layoutData>
+						</SearchField>
+					</contentRight>
+				</Bar>
+				<!--Start of Pratik  04-11-2020 -->
+				<FlexBox alignItems="Start" class="sapUiDemoFlexBoxSizeAdjustmentsZeroWidthItems">
+					<Label text="Warehouse" class="clssearchmenu"></Label>
+					<ComboBox id="wh" items="{warehouses>/}" change="onWhChange" showSecondaryValues="true" class="sapUiSmallMargin">
+						
+						<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
+					</ComboBox>
+					<Label text="Sales Channel" class="clssearchmenu"></Label>
+					<ComboBox id="brand" items="{brandModel>/allChannel}" change="onBrandChange" class="sapUiSmallMargin">
+						<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
+					</ComboBox>
+					<Label text="Product Category" class="clssearchmenu"></Label>
+					<ComboBox id="prodCat" items="{local>/ProductCategory}" change="onCategoryChange" class="sapUiSmallMargin">
+						<core:Item key="{local>key}" text="{local>name}"/>
+					</ComboBox>
+					<ToolbarSpacer/>
+					<Button id="filterButton" press="onFilter" icon="sap-icon://filter" visible="false"></Button>
+					<Button text="Reset" type="Reject" press="onReset" class="sapUiSmallMarginTop"></Button>
+					<Button id="sortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false" class="sapUiSmallMarginTop"/>
+				</FlexBox>
+				<!-- End of Pratik changes -->
+				<!--<OverflowToolbar class="aOvrFlw">
+					<Label text="Warehouse">
+						<layoutData>
+							<OverflowToolbarLayoutData priority="Low"/>
+						</layoutData>
+					</Label>
+					<ComboBox id="wh" items="{warehouses>/}" change="onWhChange" showSecondaryValues="true">
+						
+						<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
+						<layoutData>
+							<OverflowToolbarLayoutData priority="Low"/>
+						</layoutData>
+					</ComboBox>
+					<Label text="Sales Channel">
+						<layoutData>
+							<OverflowToolbarLayoutData priority="Low"/>
+						</layoutData>
+					</Label>
+					<ComboBox id="brand" items="{brandModel>/allChannel}" change="onBrandChange">
+						<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
+						<layoutData>
+							<OverflowToolbarLayoutData priority="Low"/>
+						</layoutData>
+					</ComboBox>
+					<Label text="Product Category">
+						<layoutData>
+							<OverflowToolbarLayoutData priority="Low"/>
+						</layoutData>
+					</Label>
+					<ComboBox id="prodCat" items="{local>/ProductCategory}" change="onCategoryChange">
+						<core:Item key="{local>key}" text="{local>name}"/>
+						<layoutData>
+							<OverflowToolbarLayoutData priority="Low"/>
+						</layoutData>
+					</ComboBox>
+					<ToolbarSpacer/>
+					<Button id="filterButton" press="onFilter" icon="sap-icon://filter" visible="false">
+						<layoutData>
+							<OverflowToolbarLayoutData priority="NeverOverflow"/>
+						</layoutData>
+					</Button>
+					<Button text="Reset" type="Reject" class="aResetBtn" press="onReset">
+						<layoutData>
+							<OverflowToolbarLayoutData priority="High"/>
+						</layoutData>
+					</Button>
+					<Button id="sortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false"/>
+				</OverflowToolbar>-->
+				<!--End of Pratik 04-11-2020 -->
+			</VBox>
+		</semantic:titleHeading>
+		<semantic:content>
+			<Table id="list" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true" visible="true"></Table>
+		</semantic:content>
+	</semantic:SemanticPage>
+	<semantic:SemanticPage id="masterPage2" preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop"
+		visible="false">
+<!--		<semantic:titleHeading>
+			<VBox>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="100%"/>
+					</contentLeft>
+					<contentRight>
+						<SearchField id="searchField2" showRefreshButton="false" search="onGlobalSearch" width="60%" visible="{device>/system/phone}"></SearchField>
+						<SearchField id="searchField3" showRefreshButton="false" search="onSearch" width="100%" visible="{= !${device>/system/phone} }"></SearchField>
+					</contentRight>
+				</Bar>
+				<l:VerticalLayout visible="{device>/system/phone}" width="100%">
+					<l:Grid hSpacing="1" vSpacing="0" containerQuery="true" defaultSpan="L6 M6 S6">
+						<Label text="Warehouse">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Label>
+						<ComboBox id="wh2" items="{warehouses>/}" change="onWhChange" showSecondaryValues="true">
+							<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</ComboBox>
+						<Label text="Sales Channel">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Label>
+						<ComboBox id="brand2" items="{brandModel>/allChannel}" change="onBrandChange">
+							<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</ComboBox>
+						<Label text="Product Category">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Label>
+						<ComboBox id="prodCat2" items="{local>/ProductCategory}" change="onCategoryChange">
+							<core:Item key="{local>key}" text="{local>name}"/>
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</ComboBox>
+						<Button text="Reset" type="Reject" class="aResetBtn" press="onReset">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Button>
+						<Button id="sortButton2" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false" visible="false"/>
+					</l:Grid>
+				</l:VerticalLayout>
+			</VBox>
+		</semantic:titleHeading>-->
+		<!--Start of Pratik 04-11-2020 - 3277, 3255 -->
+		<semantic:titleHeading>
+			<VBox>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="100%"/>
+					</contentLeft>
+					<contentRight>
+						<core:Icon src="sap-icon://e-learning"></core:Icon>
+						<Title text="Customer Price List"/>
+					</contentRight>
+				</Bar>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<SearchField id="searchField2" showRefreshButton="false" search="onGlobalSearch" width="100%" visible="{device>/system/phone}"></SearchField>
+						<SearchField id="searchField3" showRefreshButton="false" search="onSearch" width="100%" visible="{= !${device>/system/phone} }"></SearchField>
+					</contentLeft>
+				</Bar>
+				<l:VerticalLayout visible="{device>/system/phone}" width="100%">
+					<l:Grid hSpacing="1" vSpacing="0" containerQuery="true" defaultSpan="L6 M6 S6">
+					
+						<Label text="Warehouse">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Label>
+						<ComboBox id="wh2" items="{warehouses>/}" change="onWhChange" showSecondaryValues="true">
+							<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</ComboBox>
+						<Label text="Sales Channel">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Label>
+						<ComboBox id="brand2" items="{brandModel>/allChannel}" change="onBrandChange">
+							<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</ComboBox>
+						<Label text="Product Category">
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</Label>
+						<ComboBox id="prodCat2" items="{local>/ProductCategory}" change="onCategoryChange">
+							<core:Item key="{local>key}" text="{local>name}"/>
+							<layoutData>
+								<OverflowToolbarLayoutData priority="High"/>
+							</layoutData>
+						</ComboBox>
+					</l:Grid>
+					<Bar class="aTopBar">
+						<contentLeft>
+							<Button text="Reset" type="Reject" class="aResetBtn" press="onReset">
+								<layoutData>
+									<OverflowToolbarLayoutData priority="High"/>
+								</layoutData>
+							</Button>
+							<Button id="sortButton2" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false" visible="true"/>
+						</contentLeft>
+					</Bar>
+				</l:VerticalLayout>
+			</VBox>
+		</semantic:titleHeading>
+			<!--End of Pratik 04-11-2020-->
+		<semantic:content>
+			<List id="list2" items="{listModel>/}" width="auto" class="sapFDynamicPageAlignContent" noDataText="No Data Available"
+				mode="{= ${device>/system/phone} ? 'None' : 'SingleSelectMaster'}" growing="true" growingScrollToLoad="true"
+				updateFinished=".onUpdateFinished" selectionChange=".onSelectionChange" visible="true">
+				<headerToolbar></headerToolbar>
+				<items>
+					<ObjectListItem type="Navigation" press=".onSelectionChange" intro="{listModel>intro}" title="{listModel>title}" number="{listModel>number}"
+						numberUnit="{listModel>numUnit}"></ObjectListItem>
+				</items>
+			</List>
+		</semantic:content>
+	</semantic:SemanticPage>
+</mvc:View>

@@ -1,0 +1,6 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<SelectDialog title="Choose Promo code" noDataText="No Data avaiable" items="{promoModel>/}" contentHeight="30%"
+		search="_handleValueHelpSearchPromocode" confirm="_handleValueHelpConfirmPromocode" cancel="_handleValueHelpConfirmPromocode">
+		<StandardListItem title="{promoModel>PROMO_CODE__C}"/>
+	</SelectDialog>
+</core:FragmentDefinition>

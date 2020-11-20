@@ -1,0 +1,69 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	xmlns:upload="sap.m.upload">
+	<Dialog title="Edit Price" contentWidth="500px" titleAlignment="Center" horizontalScrolling="false" afterClose="afterClosePGSurface">
+		<Bar class="clsbar">
+			<contentMiddle>
+				<Label text="CURRENT PRICE"/>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsbar">
+			<contentMiddle>
+				<Text id="txtSFCurrPrice" text="{editModel>/0/BILLING_PRICE_ROLL__C} | {editModel>/0/BILLING_PRICE_CUT__C}" visible="false"/>
+				<Text id="txtHFCurrPrice" text="$15.39" visible="false"/>
+				<Text id="txtACCurrPrice" text="$1.40" visible="false"/>
+				<Text id="txtBGurrPrice" text="$1.40" visible="false"/>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsbar">
+			<contentMiddle>
+				<StepInput id="txtRoll" value="{editModel>/0/EditRollPrice}" displayValuePrecision="2" min="1" width="10rem" step="1" enabled="true" editable="true"
+					textAlign="Center" visible="false"/>
+				<StepInput id="txtCut" value="{editModel>/0/EditCutPrice}" displayValuePrecision="2" min="1" width="10rem" step="1" enabled="true" editable="true"
+					textAlign="Center" visible="false"/>
+				<StepInput id="txtCarton" value="15.39" displayValuePrecision="2" min="5" width="10rem" step="0.05" enabled="true" editable="true"
+					textAlign="Center" visible="false"/>
+				<StepInput id="txtEach" value="1.40" displayValuePrecision="2" min="5" width="10rem" step="0.05" enabled="true" editable="true"
+					textAlign="Center" visible="false"/>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsbar">
+			<contentMiddle class="clsmiddletext">
+				<Label id="lblRoll" text="Roll" class="clseditpopuptext" visible="false"/>
+				<Label id="lblCarton" text="Carton" class="clseditpopuptext" visible="false"/>
+				<Label id="lblCut" text="Cut" class="clseditpopuptext" visible="false"/>
+				<Label id="lblEach" text="Each" class="clseditpopuptext" visible="false"/>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsaccesslevel">
+			<contentMiddle>
+				<VBox>
+					<SegmentedButton id="sbsurfaceLevel" visible="false" selectionChange="onSurfaceBtnChange">
+						<items>
+							<SegmentedButtonItem key="TM1" width="4rem" text="TM1"/>
+							<SegmentedButtonItem key="TM2" width="4rem" text="TM2"/>
+							<SegmentedButtonItem key="TM3" width="4rem" text="TM3"/>
+							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
+							<SegmentedButtonItem key="RVP" width="4rem" text="RVP"/>
+						</items>
+					</SegmentedButton>
+					<SegmentedButton id="sbAccLevel" visible="false" selectionChange="onAccesBtnChange">
+						<items>
+							<SegmentedButtonItem key="TM" width="4rem" text="TM"/>
+							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
+							<SegmentedButtonItem key="RVP" width="4rem" text="RVP"/>
+						</items>
+					</SegmentedButton>
+					<SegmentedButton id="sbBGLevel" visible="false" selectionChange="onBGBtnChange">
+						<items>
+							<SegmentedButtonItem key="GB" width="4rem" text="BG"/>
+						</items>
+					</SegmentedButton>
+				</VBox>
+			</contentMiddle>
+		</Bar>
+		<buttons>
+			<Button id="btnCancel" text="Cancel" type="Reject" press="OnCancelPGSurface"></Button>
+			<Button id="btnNext" text="Next" type="Emphasized" press="OnNext"></Button>
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

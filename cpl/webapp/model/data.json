@@ -1,0 +1,431 @@
+{
+	"headerExpanded": true,
+	"ProductCollection": [],
+	"PricingZones": [{
+		"key": "",
+		"name": "- Pricing Zone -"
+	}, {
+		"key": "201",
+		"name": "201"
+	}, {
+		"key": "501",
+		"name": "501"
+	}],
+	"ProductCategory": [{
+		"key": "",
+		"name": ""
+	}, {
+		"key": "Care and Maintenance",
+		"name": "Care and Maintenance"
+	}, {
+		"key": "Carpet Tile",
+		"name": "Carpet Tile"
+	}, {
+		"key": "Commercial Broadloom",
+		"name": "Commercial Broadloom"
+	}, {
+		"key": "Cushion",
+		"name": "Cushion"
+	}, {
+		"key": "Installation Accessories",
+		"name": "Installation Accessories"
+	}, {
+		"key": "Residential Broadloom",
+		"name": "Residential Broadloom"
+	}, {
+		"key": "Resilient Sheet",
+		"name": "Resilient Sheet"
+	}, {
+		"key": "Resilient Tile",
+		"name": "Resilient Tile"
+	}, {
+		"key": "RevWood",
+		"name": "RevWood"
+	}, {
+		"key": "SolidWood",
+		"name": "SolidWood"
+	}, {
+		"key": "TecWood",
+		"name": "TecWood"
+	}, {
+		"key": "Tile",
+		"name": "Tile"
+	}],
+	"ProductCategories": [{
+		"key": "",
+		"name": "All"
+	}, {
+		"key": "Accessory",
+		"name": "Accessory"
+	}, {
+		"key": "Graphics Card",
+		"name": "Graphics Card"
+	}, {
+		"key": "Laptop",
+		"name": "Laptop"
+	}, {
+		"key": "Projector",
+		"name": "Projector"
+	}],
+	"Filter": {
+		"text": "Filtered by: nothing"
+	},
+	"Column": [{
+		"cat": "RevWood",
+		"key": "1",
+		"title": "Inv #",
+		"justification": "center"
+	}, {
+		"cat": "RevWood",
+		"key": "2",
+		"title": "Inventory Style",
+		"justification": "left"
+	}, {
+		"cat": "RevWood",
+		"key": "3",
+		"title": "Sell #",
+		"justification": "center"
+	}, {
+		"cat": "RevWood",
+		"key": "4",
+		"title": "Selling Style",
+		"justification": "left"
+	}, {
+		"cat": "RevWood",
+		"key": "5",
+		"title": "Segment",
+		"justification": "center"
+	}, {
+		"cat": "RevWood",
+		"key": "6",
+		"title": "Width",
+		"justification": "center"
+	}, {
+		"cat": "RevWood",
+		"key": "7",
+		"title": "TM1 Price",
+		"justification": "right"
+	}, {
+		"cat": "RevWood",
+		"key": "8",
+		"title": "TM2 Price",
+		"justification": "right"
+	}, {
+		"cat": "RevWood",
+		"key": "9",
+		"title": "TM3 Price",
+		"justification": "right"
+	}, {
+		"cat": "RevWood",
+		"key": "10",
+		"title": "DM Price",
+		"justification": "right"
+	}, {
+		"cat": "RevWood",
+		"key": "11",
+		"title": "RVP Price",
+		"justification": "right"
+	}],
+	"CatProMapping": [{
+		"cat": "FLOORINGNACARPETPRODUCT",
+		"sfCat": "Carpet Tile"
+	}, {
+		"cat": "FLOORINGNALAMINATEPRODUCT",
+		"sfCat": "RevWood"
+	}, {
+		"cat": "FLOORINGNACUSHIONPRODUCT",
+		"sfCat": "Cushion"
+	}, {
+		"cat": "FLOORINGNALAMINATEPRODUCT",
+		"sfCat": "SolidWood"
+	}, {
+		"cat": "FLOORINGNACARPETPRODUCT",
+		"sfCat": "Residential Broadloom"
+	}, {
+		"cat": "FLOORINGNACARPETPRODUCT",
+		"sfCat": "Commercial Broadloom"
+	}, {
+		"cat": "FLOORINGNARESILIENTPRODUCT",
+		"sfCat": "Resilient Sheet"
+	}, {
+		"cat": "FLOORINGNAHARDWOODPRODUCT",
+		"sfCat": "TecWood"
+	}, {
+		"cat": "FLOORINGNARESILIENTPRODUCT",
+		"sfCat": "Resilient Tile"
+	}, {
+		"cat": "FLOORINGNAINSTALLATIONPRODUCT",
+		"sfCat": "Installation Accessories"
+	}, {
+		"cat": "FLOORINGNATILEPRODUCT",
+		"sfCat": "Tile"
+	}, {
+		"cat": "FLOORINGNACAREMAINTENANCEPRODUCT",
+		"sfCat": "Care and Maintenance"
+	}],
+	"FilterMapping": [{
+		"category": "Residential Broadloom",
+		"filter": "Brand"
+	}, {
+		"category": "Residential Broadloom",
+		"filter": "Fiber"
+	}, {
+		"category": "Residential Broadloom",
+		"filter": "Fiber Brand"
+	}, {
+		"category": "Residential Broadloom",
+		"filter": "Construction"
+	}, {
+		"category": "Residential Broadloom",
+		"filter": "Weight"
+	}, {
+		"category": "Residential Broadloom",
+		"filter": "Display Vechicle"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Brand"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Fiber"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Fiber Brand"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Construction"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Weight"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Collection"
+	}, {
+		"category": "Commercial Broadloom",
+		"filter": "Display Vechicle"
+	},{
+		"category": "Carpet Tile",
+		"filter": "Brand"
+	}, {
+		"category": "Carpet Tile",
+		"filter": "Fiber"
+	}, {
+		"category": "Carpet Tile",
+		"filter": "Fiber Brand"
+	}, {
+		"category": "Carpet Tile",
+		"filter": "Construction"
+	},  {
+		"category": "Carpet Tile",
+		"filter": "Weight"
+	},  {
+		"category": "Carpet Tile",
+		"filter": "Collection"
+	},  {
+		"category": "Carpet Tile",
+		"filter": "Display Vehicle"
+	},{
+		"category": "Cushion",
+		"filter": "Category"
+	}, {
+		"category": "Cushion",
+		"filter": "Density"
+	}, {
+		"category": "Cushion",
+		"filter": "Gauge"
+	}, {
+		"category": "Cushion",
+		"filter": "Size"
+	},  {
+		"category": "Cushion",
+		"filter": "Antimicrobial"
+	},  {
+		"category": "Cushion",
+		"filter": "Moisture Barrier"
+	},  {
+		"category": "Cushion",
+		"filter": "Local Stock"
+	}, {
+		"category": "Solid Wood",
+		"filter": "Brand"
+	}, {
+		"category": "Solid Wood",
+		"filter": "Segment"
+	}, {
+		"category": "Solid Wood",
+		"filter": "Width"
+	}, {
+		"category": "Solid Wood",
+		"filter": "Species"
+	},  {
+		"category": "Solid Wood",
+		"filter": "Texture"
+	},  {
+		"category": "Solid Wood",
+		"filter": "Features"
+	}, {
+		"category": "Solid Wood",
+		"filter": "Collection"
+	}, {
+		"category": "Solid Wood",
+		"filter": "Display Vechicle"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Brand"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Segment"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Width"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Species"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Texture"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Features"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Core"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Collection"
+	}, {
+		"category": "Tech Wood",
+		"filter": "Display Vechicle"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Brand"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Segment"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Width"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Species"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Texture"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Features"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Core"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Collection"
+	}, {
+		"category": "Rev Wood",
+		"filter": "Display Vechicle"
+	}, {
+		"category": "Tile",
+		"filter": "Brand"
+	}, {
+		"category": "Tile",
+		"filter": "Category"
+	}, {
+		"category": "Tile",
+		"filter": "Application"
+	}, {
+		"category": "Tile",
+		"filter": "Segment"
+	}, {
+		"category": "Tile",
+		"filter": "Size"
+	}, {
+		"category": "Tile",
+		"filter": "Features"
+	}, {
+		"category": "Tile",
+		"filter": "Technology"
+	}, {
+		"category": "Tile",
+		"filter": "Thickness"
+	},  {
+		"category": "Tile",
+		"filter": "Core/Body"
+	}, {
+		"category": "Tile",
+		"filter": "Collection"
+	}, {
+		"category": "Tile",
+		"filter": "Display Vechicle"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Brand"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Size"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Gauge"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Wear Layer"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Installation"
+	},  {
+		"category": "Resilient Sheet",
+		"filter": "Backing"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Collection"
+	}, {
+		"category": "Resilient Sheet",
+		"filter": "Display Vechicle"
+	},  {
+		"category": "Resilient Tile",
+		"filter": "Brand"
+	}, {
+		"category": "Resilient Tile",
+		"filter": "Size"
+	}, {
+		"category": "Resilient Tile",
+		"filter": "Gauge"
+	}, {
+		"category": "Resilient Tile",
+		"filter": "Wear Layer"
+	}, {
+		"category": "Resilient Tile",
+		"filter": "Installation"
+	},  {
+		"category": "Resilient Tile",
+		"filter": "Core"
+	}, {
+		"category": "Resilient Tile",
+		"filter": "Collection"
+	}, {
+		"category": "Resilient Tile",
+		"filter": "Display Vechicle"
+	},  {
+		"category": "Installation Accessories",
+		"filter": "Brand"
+	}, {
+		"category": "Installation Accessories",
+		"filter": "Category"
+	}, {
+		"category": "Installation Accessories",
+		"filter": "Size"
+	}, {
+		"category": "Installation Accessories",
+		"filter": "Backing"
+	},  {
+		"category": "Care & Maintenance",
+		"filter": "Brand"
+	}, {
+		"category": "Care & Maintenance",
+		"filter": "Category"
+	}, {
+		"category": "Care & Maintenance",
+		"filter": "Size"
+	}, {
+		"category": "Care & Maintenance",
+		"filter": "Description"
+	}]
+}
