@@ -6,6 +6,10 @@
 				<Title class="clstitlejustification" wrapping="true" text="Reason for Price to enter approval process"/>
 			</l:HorizontalLayout>
 			<Label id="lblreasonerrmsg" class="clserrmsg" text="*Complete this field" visible="false"/>
+			<Text id="idtxtRoll1" visible="false"/>
+			<Text id="idtxtCut1" visible="false"/>
+			<Text id="idtxtCarton1" visible="false"/>
+			<Text id="idtxtEach1" visible="false"/>
 			<l:HorizontalLayout>
 				<RadioButtonGroup id="rdbReason" select="onSelectionReason" valueState="None" class="sapUiSmallMarginBottom">
 					<RadioButton id="rdb1" groupName="Reason" text="Promotional Price"/>
@@ -15,11 +19,13 @@
 					<RadioButton id="rdb5" groupName="Reason" text="Other"/>
 				</RadioButtonGroup>
 			</l:HorizontalLayout>
-			<Input id="txtPromocode" visible="false" type="Text" class="clstxtcomments" textFormatMode="Key" showValueHelp="true" valueHelpRequest="_handleValueHelpPromocode"></Input>
+			<Input id="txtPromocode" visible="false" type="Text" class="clstxtcomments" textFormatMode="Key" showValueHelp="true"
+				valueHelpRequest="_handleValueHelpPromocode"></Input>
+			<Label id="lblPromocodeMsg" class="clserrmsg" text="Please select valid promocode" visible="false"/>
 		</VBox>
 		<VBox>
 			<Label text="Detailed Comment:" class="clstxtcomments"/>
-			<TextArea id="txtComment" class="clstxtcomments" placeholder="Please Enter Comments" width="100%" rows="4"/>
+			<TextArea id="txtComment" class="clstxtcomments" placeholder="Please Enter Comments" width="100%" rows="4" liveChange="OnComment"/>
 			<Label id="lblcommenterrmsg" class="clserrmsg" text="*Complete this field" visible="false"/>
 		</VBox>
 		<buttons>

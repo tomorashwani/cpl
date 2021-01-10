@@ -2,34 +2,58 @@
 div#container-cpl---master--masterPage-pageTitle-left-inner {
     width: 100%;
 }
-.sapFDynamicPageTitleHeading-CTX.sapFDynamicPageTitleMainHeadingInner , .sapFDynamicPageTitleMainHeading{
+
+.sapFDynamicPageTitleHeading-CTX.sapFDynamicPageTitleMainHeadingInner,
+.sapFDynamicPageTitleMainHeading {
     width: 100%;
 }
-#container-cpl---master--list{
-	/*height:500px;*/
-	height: 100%;
-	overflow:auto;
+
+#container-cpl---master--list {
+    /*height:500px;*/
+    height: 100%;
+    overflow: auto;
 }
+
 .clrBlue.sapMLabel {
-    color: blue;
+    color: #4472c4;
     font-weight: bold;
     font-size: 15px;
 }
+
 .clrRed.sapMLabel {
-	color: red;
-	font-weight: bold;
+    color: #c00000;
+    font-weight: bold;
     font-size: 15px;
 }
+
 .clrGreen.sapMLabel {
-	color: green;
-	font-weight: bold;
+    color: #00b050;
+    font-weight: bold;
     font-size: 15px;
 }
+
 .clrPurple.sapMLabel {
-	color: purple;
-	font-weight: bold;
+    color: #9c057b;
+    font-weight: bold;
     font-size: 15px;
 }
+
+.clrBlue {
+    color: #4472c4 !important;
+}
+
+.clrRed {
+    color: #c00000 !important;
+}
+
+.clrGreen {
+    color: #00b050 !important;
+}
+
+.clrPurple {
+    color: #9c057b !important;
+}
+
 .clspopover.sapMPopover.sapMPopoverWithoutBar .sapMPopoverCont,
 .sapMPopover .sapMIBar.sapMHeader-CTX {
     background-color: #17335A;
@@ -47,49 +71,52 @@ div#container-cpl---master--masterPage-pageTitle-left-inner {
     border-radius: 5px;
     font-weight: bold;
 }
+
 .clspopovertext2.sapMText {
     color: white;
     padding-top: 5px;
 }
+
 /*Start of Pratik  04-11-2020 */
-.clssearchmenu
-{
-	margin-top:20px;
-	margin-right:10px;
+.clssearchmenu {
+    margin-top: 20px;
+    margin-right: 10px;
 }
+
 /*End of Pratik  04-11-2020*/
 
 /* Start of Pratik 14-11-2020 for Edit price*/
-.clsbar
-{
-	box-shadow: none;
+.clsbar {
+    box-shadow: none;
 }
-.clseditpopuptext
-{
-	font-weight:bold;
-	font-size:20px;
-	color:black !important;
+
+.clseditpopuptext {
+    font-weight: bold;
+    font-size: 20px;
+    color: black !important;
+    padding-right: 67px;
+    padding-left: 57px;
 }
-.clsaccesslevel
-{
-	box-shadow: none;
-	padding-top:30px;
+
+.clsaccesslevel {
+    box-shadow: none;
+    padding-top: 30px;
 }
-.clstitlejustification
-{
-	font-weight:bold;
-	padding-top: 10px;
+
+.clstitlejustification {
+    font-weight: bold;
+    padding-top: 10px;
     padding-left: 15px;
 }
-.clstxtcomments
-{
-	padding-left: 15px;
-	padding-right: 15px;
+
+.clstxtcomments {
+    padding-left: 15px;
+    padding-right: 15px;
 }
-.clserrmsg
-{
-	color:red;
-	padding-left: 15px;
+
+.clserrmsg {
+    color: red;
+    padding-left: 15px;
 }
 
 .clsmenuitem {
@@ -117,4 +144,16 @@ div#container-cpl---master--masterPage-pageTitle-left-inner {
 
 .clsremovepopup.sapMDialog.sapMMessageBoxQuestion .sapMDialogIcon.sapUiIcon {
     color: #ffffff;
+}
+
+
+.clstitle
+{
+	text-align:center;
+	font-size: 12px;
+	font-weight:bold;
+}
+
+.desktopTblCls .sapMListTbl {
+	table-layout: auto !important;
 }

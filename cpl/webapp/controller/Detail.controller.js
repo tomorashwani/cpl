@@ -186,6 +186,18 @@ sap.ui.define([
 			var that = this;
 			var pricing = allData.filter(function (a) {
 				if (that.userRole === "TM") {
+					return a['PRODUCT_CATEGORY__C'] === selectedCat && a['MODAL_SECTION__C'] === "Pricing Information" && (a['ACCESS_LEVEL__C'] !==
+						"DM" && a['ACCESS_LEVEL__C'] !== "RVP");
+				} else if (that.userRole === "DM") {
+					return a['PRODUCT_CATEGORY__C'] === selectedCat && a['MODAL_SECTION__C'] === "Pricing Information" && a['ACCESS_LEVEL__C'] !==
+						"RVP";
+				} else {
+					return a['PRODUCT_CATEGORY__C'] === selectedCat && a['MODAL_SECTION__C'] === "Pricing Information";
+				}
+			});
+
+			/*	var pricing = allData.filter(function (a) {
+				if (that.userRole === "TM") {
 					return a['PRODUCT_CATEGORY__C'] === selectedCat && a['MODAL_SECTION__C'] === "Pricing Information" && a['ACCESS_LEVEL__C'] ===
 						"TM";
 				} else if (that.userRole === "DM") {
@@ -198,22 +210,30 @@ sap.ui.define([
 					return a['PRODUCT_CATEGORY__C'] === selectedCat && a['MODAL_SECTION__C'] === "Pricing Information";
 				}
 			});
-
-			var pricing = allData.filter(function (a) {
+*/
+			/*var pricing = allData.filter(function (a) {
 				return a['PRODUCT_CATEGORY__C'] === selectedCat && a['MODAL_SECTION__C'] === "Pricing Information";
 			});
-			
+*/
 			selectedData.TM1_ROLL_PRICE__C = selectedData.TM1_ROLL_PRICE__C !== null ? selectedData.TM1_ROLL_PRICE__C : "0";
 			selectedData.TM2_ROLL_PRICE__C = selectedData.TM2_ROLL_PRICE__C !== null ? selectedData.TM2_ROLL_PRICE__C : "0";
 			selectedData.TM3_ROLL_PRICE__C = selectedData.TM3_ROLL_PRICE__C !== null ? selectedData.TM3_ROLL_PRICE__C : "0";
 			selectedData.DM_ROLL_PRICE__C = selectedData.DM_ROLL_PRICE__C !== null ? selectedData.DM_ROLL_PRICE__C : "0";
 			selectedData.RVP_ROLL_PRICE__C = selectedData.RVP_ROLL_PRICE__C !== null ? selectedData.RVP_ROLL_PRICE__C : "0";
+			selectedData.CORPORATE_MINI_PRICE_ROLL__C = selectedData.CORPORATE_MINI_PRICE_ROLL__C !== null ? selectedData.CORPORATE_MINI_PRICE_ROLL__C :
+				"0";
+			selectedData.BILLING_PRICE_ROLL__C = selectedData.BILLING_PRICE_ROLL__C !== null ? selectedData.BILLING_PRICE_ROLL__C : "0";
+			selectedData.NET_PRICE_ROLL__C = selectedData.NET_PRICE_ROLL__C !== null ? selectedData.NET_PRICE_ROLL__C : "0";
 
 			selectedData.TM1_CUT_PRICE__C = selectedData.TM1_CUT_PRICE__C !== null ? selectedData.TM1_CUT_PRICE__C : "0";
 			selectedData.TM2_CUT_PRICE__C = selectedData.TM2_CUT_PRICE__C !== null ? selectedData.TM2_CUT_PRICE__C : "0";
 			selectedData.TM3_CUT_PRICE__C = selectedData.TM3_CUT_PRICE__C !== null ? selectedData.TM3_CUT_PRICE__C : "0";
 			selectedData.DM_CUT_PRICE__C = selectedData.DM_CUT_PRICE__C !== null ? selectedData.DM_CUT_PRICE__C : "0";
 			selectedData.RVP_CUT_PRICE__C = selectedData.RVP_CUT_PRICE__C !== null ? selectedData.RVP_CUT_PRICE__C : "0";
+			selectedData.CORPORATE_MINI_PRICE_CUT__C = selectedData.CORPORATE_MINI_PRICE_CUT__C !== null ? selectedData.CORPORATE_MINI_PRICE_CUT__C :
+				"0";
+			selectedData.BILLING_PRICE_CUT__C = selectedData.BILLING_PRICE_CUT__C !== null ? selectedData.BILLING_PRICE_CUT__C : "0";
+			selectedData.NET_PRICE_CUT__C = selectedData.NET_PRICE_CUT__C !== null ? selectedData.NET_PRICE_CUT__C : "0";
 
 			selectedData.TM1_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.TM1_ROLL_PRICE__C)).toFixed(2) + " / $" + (parseFloat(
 				selectedData.TM1_CUT_PRICE__C)).toFixed(
@@ -228,6 +248,16 @@ sap.ui.define([
 				.toFixed(2);
 			selectedData.RVP_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.RVP_ROLL_PRICE__C)).toFixed(2) + " / $" + (parseFloat(
 				selectedData.RVP_CUT_PRICE__C)).toFixed(2);
+
+			selectedData.BILLING_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.BILLING_PRICE_ROLL__C)).toFixed(2) + " / $" + (parseFloat(
+				selectedData.BILLING_PRICE_CUT__C)).toFixed(2);
+
+			selectedData.NET_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.NET_PRICE_ROLL__C)).toFixed(2) + " / $" + (parseFloat(
+				selectedData.NET_PRICE_CUT__C)).toFixed(2);
+
+			selectedData.CORP_MIN_ROLL_CUT_CONCAT__C = "$" + (parseFloat(selectedData.CORPORATE_MINI_PRICE_ROLL__C)).toFixed(2) + " / $" + (
+				parseFloat(
+					selectedData.CORPORATE_MINI_PRICE_CUT__C)).toFixed(2);
 
 			/*selectedData.TM1_ROLL_PRICE__C !== null && selectedData.TM1_CUT_PRICE__C !== null ? selectedData.TM1_PRICE_CONCAT__C = "$" + (
 					selectedData.TM1_ROLL_PRICE__C).toFixed(2) + " / $" + (selectedData.TM1_CUT_PRICE__C).toFixed(2) : selectedData.TM1_PRICE_CONCAT__C =
@@ -244,8 +274,9 @@ sap.ui.define([
 			selectedData.RVP_ROLL_PRICE__C !== null && selectedData.RVP_CUT_PRICE__C !== null ? selectedData.RVP_PRICE_CONCAT__C = "$" + (
 					parseFloat(selectedData.RVP_ROLL_PRICE__C)).toFixed(2) + " / $" + (parseFloat(selectedData.RVP_CUT_PRICE__C)).toFixed(2) :
 				selectedData.RVP_PRICE_CONCAT__C = selectedData.RVP_ROLL_PRICE__C + " / " + selectedData.RVP_CUT_PRICE__C;*/
-
-
+			primary.sort(function (a, b) {
+				return parseFloat(b.MODAL_PRIMARY_SORT_ORDER__C) - parseFloat(a.MODAL_PRIMARY_SORT_ORDER__C);
+			});
 			var pGrid = this.getView().byId("primaryGrid");
 			pGrid.removeAllContent();
 			for (var p = 0; p < primary.length; p++) {
@@ -258,7 +289,9 @@ sap.ui.define([
 				});
 				pGrid.insertContent(p1ObjAttr);
 			}
-
+			secondary.sort(function (a, b) {
+				return parseFloat(b.MODAL_SECONDARY_SORT_ORDER__C) - parseFloat(a.MODAL_SECONDARY_SORT_ORDER__C);
+			});
 			var sGrid = this.getView().byId("secondaryGrid");
 			sGrid.removeAllContent();
 			for (var p = 0; p < secondary.length; p++) {
@@ -271,15 +304,36 @@ sap.ui.define([
 				sGrid.insertContent(sObjAttr);
 			}
 
+			pricing.sort(function (a, b) {
+				return parseFloat(b.MODAL_PRIMARY_SORT_ORDER__C) - parseFloat(a.MODAL_PRIMARY_SORT_ORDER__C);
+			});
 			var tGrid = this.getView().byId("pricingGrid");
 			tGrid.removeAllContent();
 			for (var p = 0; p < pricing.length; p++) {
 				var field = pricing[p]['FIELD_API_NAME__C'].toUpperCase();
 				field = field.includes("PRODUCT__R.") ? field.replace("PRODUCT__R.", "") : field;
-				var tObjAttr = new sap.m.ObjectAttribute({
-					title: pricing[p]['SHORT_LABEL__C'],
-					text: selectedData[field]
-				});
+				if (selectedCat === "Residential Broadloom" || selectedCat === "Commercial Broadloom" || selectedCat === "Resilient Sheet") {
+					var tObjAttr = new sap.m.ObjectAttribute({
+						title: pricing[p]['SHORT_LABEL__C'],
+						text: selectedData[field]
+					});
+				} else {
+					if (pricing[p]['SHORT_LABEL__C'] === "Level" || pricing[p]['SHORT_LABEL__C'] === "Price Level") {
+						var tObjAttr = new sap.m.ObjectAttribute({
+							title: pricing[p]['SHORT_LABEL__C'],
+							text: selectedData[field]
+						});
+					} else {
+						var tObjAttr = new sap.m.ObjectAttribute({
+							title: pricing[p]['SHORT_LABEL__C'],
+							text: "$" + selectedData[field]
+						});
+					}
+				}
+				/*	var tObjAttr = new sap.m.ObjectAttribute({
+						title: pricing[p]['SHORT_LABEL__C'],
+						text: selectedData[field]
+					});*/
 				tGrid.insertContent(tObjAttr);
 			}
 

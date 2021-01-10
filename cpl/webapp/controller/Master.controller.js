@@ -9,8 +9,10 @@ sap.ui.define([
 	"sap/ui/Device",
 	"sap/ui/core/Fragment",
 	"sap/m/MessageBox",
-	"../model/formatter"
-], function (BaseController, JSONModel, Filter, Sorter, FilterOperator, GroupHeaderListItem, Device, Fragment, MessageBox, formatter) {
+	"../model/formatter",
+	"sap/m/MessageToast"
+], function (BaseController, JSONModel, Filter, Sorter, FilterOperator, GroupHeaderListItem, Device, Fragment, MessageBox, formatter,
+	MessageToast) {
 	"use strict";
 
 	return BaseController.extend("cf.cpl.controller.Master", {
@@ -44,8 +46,6 @@ sap.ui.define([
 				aSearch: []
 			};
 
-			// this.setModel(oViewModel, "masterView");
-
 			// Make sure, busy indication is showing immediately so there is no
 			// break after the busy indication for loading the view's meta data is
 			// ended (see promise 'oWhenMetadataIsLoaded' in AppController)
@@ -63,7 +63,7 @@ sap.ui.define([
 			this.getRouter().getRoute("master").attachPatternMatched(this._onMasterMatched, this);
 			this.getRouter().attachBypassed(this.onBypassed, this);
 
-			this.proCat = {
+			/*this.proCat = {
 				"ProductCategory": [{
 					"key": "",
 					"name": ""
@@ -72,7 +72,7 @@ sap.ui.define([
 					"name": "Residential Broadloom"
 				}, {
 					"key": "Resilient Tile",
-					"name": "Resilient Tile"
+					"name": "Resilient Tile & Plank"
 				}, {
 					"key": "RevWood",
 					"name": "RevWood"
@@ -101,9 +101,9 @@ sap.ui.define([
 					"key": "Accessories",
 					"name": "Accessories"
 				}]
-			};
+			};*/
 
-			var lModel = new JSONModel(this.proCat);
+			var lModel = new JSONModel(this.productCategory());
 			this.getView().setModel(lModel, "local");
 			this.getView().byId("prodCat").setModel(lModel, "local");
 			this.getView().byId("prodCat2").setModel(lModel, "local");
@@ -116,10 +116,12 @@ sap.ui.define([
 
 			// this.user = 'Ashley Nalley';
 			var that = this;
+			this.lmtdPrice = false;
 			var appName = "Customer_Price_List";
 			this.loggedInUser = "";
 
 			// Catalogue Service:
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: "pricing/PriceGrid.xsodata/Catalogue?$filter=GRID_TYPE eq '" + appName + "'",
 				contentType: "application/json",
@@ -131,8 +133,12 @@ sap.ui.define([
 					that.gridmeta.sort(that.sortGridMeta);
 					var oModel = new JSONModel(that.gridmeta);
 					sap.ui.getCore().setModel(oModel, "configModel");
+					sap.ui.getCore().getModel("configModel").setData(that.gridmeta);
+					sap.ui.getCore().busyIndicator.close();
 				},
-				error: function (error) {}
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
 			});
 
 			// Get Account Number
@@ -148,6 +154,7 @@ sap.ui.define([
 				whURL = "pricing/PriceGrid.xsodata/Account?$filter=ACCOUNT__C eq '" + accNo + "'";
 			}
 
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				// url: "pricing/PriceGrid.xsodata/Warehouse",
 				url: whURL,
@@ -156,10 +163,6 @@ sap.ui.define([
 				dataType: "json",
 				async: false,
 				success: function (response) {
-					//var oModel = new sap.ui.model.json.JSONModel(response.d.results);
-					//that.getView().byId("order").setModel(oModel);
-					//console.log(response.d.results);
-
 					var whResults = response.d.results;
 
 					that.warehouses = [];
@@ -179,24 +182,24 @@ sap.ui.define([
 						}
 					}
 
-					// that.warehouses = response.d.results;
-
 					that.warehouses.unshift({
 						"WAREHOUSE_CODE__C": "",
 						"WAREHOUSE_CODE__DESC": ""
 					});
-					if (response.d.results[0]) {
-						that.selectedWH = response.d.results[0].WAREHOUSE_CODE__C;
-					}
+					
 					var oModel = new JSONModel(that.warehouses);
 					that.byId("wh").setModel(oModel, "warehouses");
 					that.byId("wh2").setModel(oModel, "warehouses");
+					sap.ui.getCore().getModel("configModel").setProperty("/wh", that.warehouses);
+					sap.ui.getCore().busyIndicator.close();
 				},
 				error: function (error) {
 					that.warehouses = false;
+					sap.ui.getCore().busyIndicator.close();
 				}
 			});
 
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: "pricing/PriceGrid.xsodata/Brand",
 				contentType: "application/json",
@@ -239,11 +242,35 @@ sap.ui.define([
 					that.getView().getModel("brandModel").setProperty("/allBrand", brand);
 					that.getView().getModel("brandModel").setProperty("/filteredBrand", that.filteredBrand);
 					that.getView().getModel("brandModel").setProperty("/allChannel", salesChnl);
+					sap.ui.getCore().getModel("configModel").setProperty("/allChannel", salesChnl);
+					sap.ui.getCore().getModel("configModel").setProperty("/allBrand", brand);
 
 					that.getView().byId("masterPage2").setVisible(false);
 					that.getView().byId("masterPage").setVisible(true);
+					sap.ui.getCore().busyIndicator.close();
 				},
-				error: function (error) {}
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
+			});
+
+			sap.ui.getCore().busyIndicator.open();
+			$.ajax({
+				url: "pricing/PriceGrid.xsodata/PromoCode?$format=json",
+				contentType: "application/json",
+				type: 'GET',
+				dataType: "json",
+				async: false,
+				success: function (response) {
+					var promoData = response.d.results
+					var promoModel = new JSONModel();
+					promoModel.setData(promoData);
+					that.getView().setModel(promoModel, "promoModel");
+					sap.ui.getCore().busyIndicator.close();
+				},
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
 			});
 
 		},
@@ -251,6 +278,7 @@ sap.ui.define([
 		onAfterRendering: function (oEvent) {
 
 			var that = this;
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: "../user"
 			}).done(function (data, status, jqxhr) {
@@ -265,19 +293,21 @@ sap.ui.define([
 					async: false,
 					success: function (response) {
 						if (response.d.results.length > 0) {
-							// that.userRole = response.d.results[0].ROLE;
+							that.userRole = response.d.results[0].ROLE;
 							g.empNo = response.d.results[0].EMPLOYEENUMBER;
 							g._getTerritoryUser(g.empNo);
 						}
-						// sap.ui.getCore().getModel("configModel").setProperty("/userRole", that.userRole);
+						sap.ui.getCore().getModel("configModel").setProperty("/userRole", that.userRole);
+						sap.ui.getCore().busyIndicator.close();
 					},
-					error: function (error) {}
+					error: function (error) {
+						sap.ui.getCore().busyIndicator.close();
+					}
 				});
 			});
 
 			// this.loggedInUser = "Saradha_Varadharajan@mohawkind.com";
 
-			// this.selectedCat = document.getElementById('container-cpl-prodCat-labelText').innerHTML;
 
 			$("#container-cpl---master--list").on('scroll', {
 				g: this
@@ -288,20 +318,7 @@ sap.ui.define([
 			this.getView().setModel(pViewModel, "pViewModel");
 			this._filterDisable();
 
-			// var pViewModel = sap.ui.getCore().getModel("pViewModel");
-			// this.getView().setModel(pViewModel, "pViewModel");
-			// var pViewData = pViewModel.getData();
-
-			// var tCol = localData.Column;
 			var priceModel = new JSONModel();
-			//this.selectedCat = document.getElementById('container-cpl---App--prodCat-labelText').innerHTML;
-			/*for (var cat = 0; cat < this.CatProValues.length; cat++) {
-				if (this.CatProValues[cat].sfCat == this.selectedCat) {
-					this.selectedCatPro = this.CatProValues[cat].cat;
-					break;
-				}
-			}*/
-			// this.selectedWH = document.getElementById('container-cpl---App--wh-labelText').innerHTML;
 			this.fetchTotal = 100; //`Top` variable in teh ajax call
 			this.fetchSkip = 0;
 			var g = this;
@@ -316,23 +333,22 @@ sap.ui.define([
 
 		_getTerritoryUser: function (empNo) {
 			var that = this;
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
-				// url: "pricing/PriceGrid.xsodata/TerritoryUser?$filter=CAMS_EMPLOYEE_NUM__C eq '" + empNo + "'",
 				url: "pricing/PriceGrid.xsodata/TerritoryUser",
 				contentType: "application/json",
 				type: 'GET',
 				dataType: "json",
 				async: false,
 				success: function (response) {
-					/*if (response.d.results.length > 0) {
-						that.userRole = response.d.results[0].ROLE;
-					}
-					sap.ui.getCore().getModel("configModel").setProperty("/userRole", that.userRole);*/
 					var territoryData = response.d.results;
 					sap.ui.getCore().getModel("configModel").setProperty("/territoryData", territoryData);
 					that._roleGrp(territoryData, empNo);
+					sap.ui.getCore().busyIndicator.close();
 				},
-				error: function (error) {}
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
 			});
 		},
 
@@ -499,6 +515,7 @@ sap.ui.define([
 				var accPrdFilter = nameFilter;
 			}
 			var that = this;
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: "pricing/PriceGrid.xsodata/AccountProductUser?$filter=" + accPrdFilter,
 				contentType: "application/json",
@@ -508,48 +525,21 @@ sap.ui.define([
 				success: function (response) {
 					var data = response.d.results;
 					var brCode = [];
-					var productCode = [];
+
 					for (var i = 0; i < data.length; i++) {
-						brCode.push(data[i].BRAND_CODE__C);
-						productCode.push(data[i].PRODUCT_TYPE__C);
-					}
-
-					for (var t = 0; t < brCode.length; t++) {
-						var tempBrCode = {
-							"brand": brCode[t]
-						};
-						var brAdded = false;
-						for (var s = 0; s < that.brCode.length; s++) {
-							if (that.brCode[s].brand === tempBrCode.brand) {
-								brAdded = true;
-							}
-						}
-						if (brAdded === false) {
-							that.brCode.push(tempBrCode);
-						}
-					}
-
-					for (var v = 0; v < productCode.length; v++) {
 						var tempProCode = {
-							"proCode": productCode[v]
+							"brand": data[i].BRAND_CODE__C,
+							"proCode": data[i].PRODUCT_TYPE__C
 						};
-						var proAdded = false;
-						for (var s = 0; s < that.productCode.length; s++) {
-							if (that.productCode[s].proCode === tempProCode.proCode) {
-								proAdded = true;
-							}
-						}
-						if (proAdded === false) {
-							that.productCode.push(tempProCode);
-						}
+						brCode.push(tempProCode);
 					}
-
-					/*that.brCode = brCode;
-					that.productCode = productCode;*/
-					sap.ui.getCore().getModel("configModel").setProperty("/brCode", that.brCode);
-					sap.ui.getCore().getModel("configModel").setProperty("/productCode", that.productCode);
+					that.brCode = brCode;
+					sap.ui.getCore().getModel("configModel").setProperty("/brCode", brCode);
+					sap.ui.getCore().busyIndicator.close();
 				},
-				error: function (error) {}
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
 			});
 		},
 
@@ -586,7 +576,7 @@ sap.ui.define([
 				this.getView().setModel(pViewModel, "pViewModel");
 			}
 		},
-		onFilter: function () {
+		/*onFilter: function () {
 			var ffVBox = sap.ui.getCore().byId("ffVBox");
 			var filterData = this.filterData;
 			var that = this;
@@ -661,8 +651,6 @@ sap.ui.define([
 					controller: this
 				}).then(function (oDialog) {
 					// connect dialog to the root view of this component (models, lifecycle)
-					//
-
 					this.getView().addDependent(oDialog);
 					oDialog.addStyleClass(this.getOwnerComponent().getContentDensityClass());
 					oDialog.setModel(pViewModel, "pViewModel");
@@ -673,14 +661,15 @@ sap.ui.define([
 				this.byId("filter").setModel(pViewModel, "pViewModel");
 				this.byId("filter").open(sDialogTab);
 			}
-		},
+		},*/
 
 		handlePressClose: function () {
 			this.byId("filter").close();
 		},
 
-		onCategoryChange: function (oEvent) {
-			this.selectedCat = oEvent.getParameters().value;
+		/*onCategoryChange: function (oEvent) {
+			// this.selectedCat = oEvent.getParameters().value;
+			this.selectedCat = oEvent.getSource().getSelectedKey();
 			this.fetchTotal = 100;
 			this.fetchSkip = 0;
 			this._filterDisable();
@@ -689,13 +678,6 @@ sap.ui.define([
 				delete this.sortDialog;
 			}
 			this.fetchProducts();
-			//Start of Pratik 04-11-2020//	
-			/*var oTable = this.byId("list"),
-				oBinding = oTable.getBinding("items"),
-				aSorters = [];
-			aSorters.push(new Sorter("NAME", false));
-			oBinding.sort(aSorters);*/
-			//End of Pratik 04-11-2020//	
 		},
 
 		onWhChange: function (oEvent) {
@@ -710,7 +692,7 @@ sap.ui.define([
 			this.fetchTotal = 100;
 			this.fetchSkip = 0;
 			this.fetchProducts();
-		},
+		},*/
 
 		fetchProducts: function () {
 			var brand = this.byId("brand").getModel("brandModel").getProperty("/allBrand");
@@ -721,7 +703,7 @@ sap.ui.define([
 			this.globalSearch = false;
 
 			if (this.selectedChannel !== "" && this.selectedChannel !== null && this.selectedChannel !== undefined && this.selectedCat !==
-				undefined) {
+				undefined && this.selectedWH !== undefined && this.selectedWH !== null) {
 				this.filteredBrand = [];
 				for (var i = 0; i < brand.length; i++) {
 					if (brand[i].SALES_CHANNEL__C === this.selectedChannel) {
@@ -754,7 +736,7 @@ sap.ui.define([
 				} else if (this.selectedCat === "Carpet Tile") {
 					viewName = "CPLCarpetTileView";
 				} else if (this.selectedCat === "Cushion") {
-					viewName = "";
+					viewName = "CPLCushionView";
 				} else if (this.selectedCat === "Residential Broadloom") {
 					viewName = "CPLResidentialBroadloomView";
 				} else if (this.selectedCat === "Resilient Tile") {
@@ -771,13 +753,6 @@ sap.ui.define([
 					viewName = "CPLTileView";
 				}
 				if (this.accNo === "" || this.accNo === undefined) {
-					/*if (this.globalSearchField !== "" && this.globalSearchField !== undefined && this.globalSearchValue !== "" && this.globalSearchValue !==
-						undefined) {
-						var url = "pricing/PriceGrid.xsodata/" + viewName + "?$filter=WAREHOUSE_CODE__C eq '" +
-							this.selectedWH + "' " + urlBrand + ") and (" + this.globalSearchField + ") &$skip=" + this.fetchSkip +
-							"&$top=" + this.fetchTotal + "&$format=json";
-					} */
-					// /CPLResidentialBroadloomView.xsjs?Whcode=AND&accountNo=R.415888.0000&Brandcode=Retail&globalsearchKey=2R63&limit=100&from=1
 					if (this.globalSearchValue !== "" && this.globalSearchValue !== undefined) {
 						var url = "pricing/" + viewName + ".xsjs?Whcode=" + this.selectedWH + "&accountNo1=NA&accountNo2=NA&Brandcode=" + this.selectedChannel +
 							"&globalsearchKey=" + this.globalSearchValue + "&limit=" + this.fetchTotal + "&from=" + this.fetchSkip + "&$format=json";
@@ -788,13 +763,6 @@ sap.ui.define([
 				} else {
 					if (this.accNo.split(".")[2] !== "0000") {
 						this.preAcc = this.accNo.replace(this.accNo.split(".")[2], "0000");
-						/*if (this.globalSearchField !== "" && this.globalSearchField !== undefined && this.globalSearchValue !== "" && this.globalSearchValue !==
-							undefined) {
-							var url = "pricing/PriceGrid.xsodata/" + viewName + "?$filter=ACCOUNT__C eq '" + this.accNo + "' or ACCOUNT__C eq '" +
-								this.preAcc + "' and WAREHOUSE_CODE__C eq '" +
-								this.selectedWH + "' " + urlBrand + ") and (" + this.globalSearchField + ") &$skip=" + this.fetchSkip +
-								"&$top=" + this.fetchTotal + "&$format=json";
-						} */
 						if (this.globalSearchValue !== "" && this.globalSearchValue !== undefined) {
 							var url = "pricing/" + viewName + ".xsjs?Whcode=" + this.selectedWH + "&accountNo1=" + this.accNo + "&accountNo2=" + this.preAcc +
 								"&Brandcode=" + this.selectedChannel +
@@ -805,13 +773,6 @@ sap.ui.define([
 								this.selectedWH + "' " + urlBrand + ")&$skip=" + this.fetchSkip + "&$top=" + this.fetchTotal + "&$format=json";
 						}
 					} else {
-						/*if (this.globalSearchField !== "" && this.globalSearchField !== undefined && this.globalSearchValue !== "" && this.globalSearchValue !==
-							undefined) {
-							var url = "pricing/PriceGrid.xsodata/" + viewName + "?$filter=ACCOUNT__C eq '" + this.accNo +
-								"' and WAREHOUSE_CODE__C eq '" +
-								this.selectedWH + "' " + urlBrand + ") and (" + this.globalSearchField + ") &$skip=" + this.fetchSkip +
-								"&$top=" + this.fetchTotal + "&$format=json";
-						} */
 						if (this.globalSearchValue !== "" && this.globalSearchValue !== undefined) {
 							var url = "pricing/" + viewName + ".xsjs?Whcode=" + this.selectedWH + "&accountNo1=" + this.accNo + "&accountNo2=NA&Brandcode=" +
 								this.selectedChannel +
@@ -826,6 +787,7 @@ sap.ui.define([
 
 				if (this.selectedWH !== undefined & this.selectedWH !== "" & this.selectedChannel !== undefined & this.selectedChannel !== "" &
 					this.selectedCat !== undefined & this.selectedCat !== "") {
+					sap.ui.getCore().busyIndicator.open();
 					$.ajax({
 						url: url,
 						contentType: "application/json",
@@ -846,19 +808,58 @@ sap.ui.define([
 								that.endResult = false;
 							}
 
+							data = data.filter(function (c) {
+								var endDate = 0;
+								if(c.END_DATE__C !== null){
+									if (c.END_DATE__C.split("(").length > 1) {
+									endDate = parseFloat(c.END_DATE__C.split("(")[1].split(")")[0]);
+								} else {
+									endDate = parseFloat(new Date(c.END_DATE__C).getTime());
+								}
+								var currDate = new Date().getTime();
+								return endDate > currDate;
+								}
+								
+							});
+
 							pViewModel.setData(data);
 							var pViewData = data;
+							// var offset = +5.5;
+							var timeZone = that.getTimeZone();
+							var offset = timeZone/60;
 							for (var i = 0; i < pViewData.length; i++) {
 
-								pViewData[i].SELLING_STYLE_CONCAT__C = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].SELLING_STYLE_NUM__C + ")";
+								pViewData[i].SELLING_STYLE_CONCAT__C = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].PRODUCT_STYLE_NUMBER__C + ")";
 								// pViewData[i].NAME = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].SELLING_STYLE_NUM__C + ")";
 								pViewData[i].NAME = pViewData[i].PRODUCT_NAME__C; // modified because of change request by client
-								pViewData[i].MASTER_STYLE_CONCAT__C = pViewData[i].MASTER_NAME__C + "(" + pViewData[i].MASTER_STYLE_NUM__C + ")";
+								pViewData[i].MASTER_STYLE_CONCAT__C = pViewData[i].MASTER_STYLE_NAME__C + "(" + pViewData[i].MASTER_STYLE_NUM__C + ")";
 								pViewData[i].INVENTORY_STYLE_CONCAT__C = pViewData[i].INVENTORY_STYLE_NAME__C + "(" + pViewData[i].INVENTORY_STYLE_NUM__C +
 									")";
 								pViewData[i].TM3_PRICE_CONCAT__C = pViewData[i].INVENTORY_STYLE_NAME__C + "(" + pViewData[i].INVENTORY_STYLE_NUM__C + ")";
 
 								pViewData[i].INFORMATION = "";
+
+								pViewData[i].EDIT_START_DATE = pViewData[i].START_DATE__C;
+								pViewData[i].EDIT_END_DATE = pViewData[i].END_DATE__C;
+
+								if (pViewData[i].START_DATE__C.split("(").length > 1) {
+									var clientStartDate = new Date(parseFloat(pViewData[i].START_DATE__C.split("(")[1].split(")")[0]));
+								} else {
+									var clientStartDate = new Date(parseFloat(new Date(pViewData[i].START_DATE__C).getTime()));
+								}
+								var utcStart = clientStartDate.getTime() + (clientStartDate.getTimezoneOffset() * 60000);
+								var modifiedStart = new Date(utcStart + (3600000 * offset));
+								pViewData[i].START_DATE__C = "/Date(" + modifiedStart.getTime() + ")/";
+
+								if (pViewData[i].END_DATE__C.split("(").length > 1) {
+									var clientEndDate = new Date(parseFloat(pViewData[i].END_DATE__C.split("(")[1].split(")")[0]));
+								} else {
+									var clientEndDate = new Date(parseFloat(new Date(pViewData[i].END_DATE__C).getTime()));
+								}
+
+								var utcEnd = clientEndDate.getTime() + (clientEndDate.getTimezoneOffset() * 60000);
+								var modifiedEnd = new Date(utcEnd + (3600000 * offset));
+								pViewData[i].END_DATE__C = "/Date(" + modifiedEnd.getTime() + ")/";
 
 								if (parseFloat(pViewData[i].CUTS_AT_ROLL__C) > 0) {
 									pViewData[i].INFORMATION += " C";
@@ -872,9 +873,62 @@ sap.ui.define([
 								if (pViewData[i].MIN_ORDER_QTY__C === "X") {
 									pViewData[i].INFORMATION += " Q";
 								}
-								if (pViewData[i].BILLING_PRICE_ROLL__C !== pViewData[i].NET_PRICE_ROLL__C) {
-									pViewData[i].INFORMATION += " $";
+								if (that.selectedCat === "Commercial Broadloom" || that.selectedCat === "Residential Broadloom") {
+									if (pViewData[i].BILLING_PRICE_ROLL__C !== pViewData[i].NET_PRICE_ROLL__C && pViewData[i].BILLING_PRICE_CUT__C !==
+										pViewData[i].NET_PRICE_CUT__C) {
+										pViewData[i].INFORMATION += " $";
+									}
+								} else {
+									if (pViewData[i].BILLING_PRICE__C !== pViewData[i].NET_PRICE__C) {
+										pViewData[i].INFORMATION += " $";
+									}
 								}
+
+								//Change of 26-11-2020 for Edit record
+
+								pViewData[i].EDIT_START_DATE = pViewData[i].START_DATE__C;
+								pViewData[i].EDIT_END_DATE = pViewData[i].END_DATE__C;
+
+								// chanages for modiefied bill price / bill roll / bill cut rpice 
+								if (pViewData[i].BILLING_PRICE__C !== null || pViewData[i].BILLING_PRICE__C !== undefined) {
+									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+										that.loggedInUser && that.selectedCat == "Accessories") {
+										pViewData[i].BILLING_PRICE__C = pViewData[i].REQUESTED_BILLING_PRICE__C;
+									} else {
+										pViewData[i].BILLING_PRICE__C = pViewData[i].BILLING_PRICE__C;
+									}
+									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+										that.loggedInUser && (that.selectedCat === "RevWood" || that.selectedCat === "SolidWood" || that.selectedCat ===
+											"TecWood" || that.selectedCat === "Resilient Tile" || that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile")
+									) {
+										pViewData[i].BILLING_PRICE__C = pViewData[i].REQUESTED_BILLING_PRICE_CARTON__C;
+									} else {
+										pViewData[i].BILLING_PRICE__C = pViewData[i].BILLING_PRICE__C;
+									}
+								}
+
+								if (pViewData[i].BILLING_PRICE_ROLL__C !== null || pViewData[i].BILLING_PRICE_ROLL__C !== undefined) {
+									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+										that.loggedInUser) {
+										pViewData[i].BILLING_PRICE_ROLL__C = pViewData[i].REQUESTED_BILLING_PRICE_ROLL__C;
+									} else {
+										pViewData[i].BILLING_PRICE_ROLL__C = pViewData[i].BILLING_PRICE_ROLL__C;
+									}
+								}
+
+								if (pViewData[i].BILLING_PRICE_CUT__C !== null || pViewData[i].BILLING_PRICE_CUT__C !== undefined) {
+									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+										that.loggedInUser) {
+										pViewData[i].BILLING_PRICE_CUT__C = pViewData[i].REQUESTED_BILLING_PRICE_CUT__C;
+									} else {
+										pViewData[i].BILLING_PRICE_CUT__C = pViewData[i].BILLING_PRICE_CUT__C;
+									}
+								}
+								// chanages for modiefied bill price / bill roll / bill cut rpice 	
+
+								//changes for check created limited price record exist or not
+								pViewData[i].ISLIMITEDPRICERECORD = pViewData[i].CPL_PRICE_ID__C.length === 13 ? true : false;
+								//changes for check created limited price record exist or not
 
 								pViewData[i].TM1_ROLL_PRICE__C = pViewData[i].TM1_ROLL_PRICE__C !== null ? pViewData[i].TM1_ROLL_PRICE__C : "0";
 								pViewData[i].TM2_ROLL_PRICE__C = pViewData[i].TM2_ROLL_PRICE__C !== null ? pViewData[i].TM2_ROLL_PRICE__C : "0";
@@ -894,8 +948,11 @@ sap.ui.define([
 								pViewData[i].DM_PRICE__C = pViewData[i].DM_PRICE__C !== null ? pViewData[i].DM_PRICE__C : "0";
 								pViewData[i].RVP_PRICE__C = pViewData[i].RVP_PRICE__C !== null ? pViewData[i].RVP_PRICE__C : "0";
 
-								if (pViewData[i].BILLING_PRICE_ROLL__C) { // added condition for Buyers group fields - Pratik - 30/10
-									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null) {
+								if (pViewData[i].BILLING_PRICE_ROLL__C === null) {
+									pViewData[i].PRICE_LEVEL_ROLL__C = "N/A";
+								} else if (pViewData[i].BILLING_PRICE_ROLL__C) { // added condition for Buyers group fields - Pratik - 30/10
+									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i].BUYING_GROUP_NUMBER__C !== ""
+									) {
 										if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) > parseFloat(pViewData[i].GROUP_ROLL_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_ROLL__C = "> BG";
 										} else if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) == parseFloat(pViewData[i].GROUP_ROLL_PRICE__C)) {
@@ -907,8 +964,18 @@ sap.ui.define([
 											pViewData[i].PRICE_LEVEL_ROLL__C = "N/A";
 										}
 									} else {
-										if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) > parseFloat(pViewData[i].TM1_ROLL_PRICE__C)) {
+										if (pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+											pViewData[i].PRICE_LEVEL_ROLL__C = "N/A";
+										} else if (pViewData[i].BILLING_PRICE_ROLL__C === "0" && pViewData[i].TM1_ROLL_PRICE__C === "0" && pViewData[i].TM2_ROLL_PRICE__C ===
+											"0" && pViewData[i].TM3_ROLL_PRICE__C === "0" && pViewData[i].DM_ROLL_PRICE__C === "0" && pViewData[i].RVP_ROLL_PRICE__C ===
+											"0") {
+											pViewData[i].PRICE_LEVEL_ROLL__C = "N/A";
+										} else if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) > parseFloat(pViewData[i].TM1_ROLL_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_ROLL__C = "> TM1";
+										} else if ((parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) == parseFloat(pViewData[i].TM1_ROLL_PRICE__C)) &&
+											(parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) == parseFloat(pViewData[i].TM2_ROLL_PRICE__C)) && (parseFloat(pViewData[
+												i].BILLING_PRICE_ROLL__C) == parseFloat(pViewData[i].TM3_ROLL_PRICE__C))) {
+											pViewData[i].PRICE_LEVEL_ROLL__C = "TM1/TM2/TM3";
 										} else if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) == parseFloat(pViewData[i].TM1_ROLL_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_ROLL__C = "TM1";
 										} else if ((parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) < parseFloat(pViewData[i].TM1_ROLL_PRICE__C)) && (parseFloat(
@@ -931,8 +998,11 @@ sap.ui.define([
 
 								}
 
-								if (pViewData[i].BILLING_PRICE_CUT__C) { // added condition for Buyers group fields - Pratik - 30/10
-									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null) {
+								if (pViewData[i].BILLING_PRICE_CUT__C === null) {
+									pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
+								} else if (pViewData[i].BILLING_PRICE_CUT__C) { // added condition for Buyers group fields - Pratik - 30/10
+									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i].BUYING_GROUP_NUMBER__C !== ""
+									) {
 										if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) > parseFloat(pViewData[i].GROUP_CUT_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_CUT__C = "> BG";
 										} else if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) == parseFloat(pViewData[i].GROUP_CUT_PRICE__C)) {
@@ -944,8 +1014,18 @@ sap.ui.define([
 											pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
 										}
 									} else {
-										if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) > parseFloat(pViewData[i].TM1_CUT_PRICE__C)) {
+										if (pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+											pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
+										} else if (pViewData[i].BILLING_PRICE_CUT__C === "0" && pViewData[i].TM1_CUT_PRICE__C === "0" && pViewData[i].TM2_CUT_PRICE__C ===
+											"0" && pViewData[i].TM3_CUT_PRICE__C === "0" && pViewData[i].DM_CUT_PRICE__C === "0" && pViewData[i].RVP_CUT_PRICE__C ===
+											"0") {
+											pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
+										} else if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) > parseFloat(pViewData[i].TM1_CUT_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_CUT__C = "> TM1";
+										} else if ((parseFloat(pViewData[i].BILLING_PRICE_CUT__C) == parseFloat(pViewData[i].TM1_CUT_PRICE__C)) &&
+											(parseFloat(pViewData[i].BILLING_PRICE_CUT__C) == parseFloat(pViewData[i].TM2_CUT_PRICE__C)) && (parseFloat(pViewData[i]
+												.BILLING_PRICE_CUT__C) == parseFloat(pViewData[i].TM3_CUT_PRICE__C))) {
+											pViewData[i].PRICE_LEVEL_CUT__C = "TM1/TM2/TM3";
 										} else if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) == parseFloat(pViewData[i].TM1_CUT_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_CUT__C = "TM1";
 										} else if ((parseFloat(pViewData[i].BILLING_PRICE_CUT__C) < parseFloat(pViewData[i].TM1_CUT_PRICE__C)) && (parseFloat(
@@ -968,83 +1048,233 @@ sap.ui.define([
 
 								}
 
-								if (pViewData[i].BILLING_PRICE__C) { // added condition for Buyers group fields - Pratik - 30/10
-									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null) {
-										if (parseFloat(pViewData[i].BILLING_PRICE__C) > parseFloat(pViewData[i].GROUP_PRICE__C)) {
-											pViewData[i].PRICE_LEVEL__C = "> BG";
-										} else if (parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].GROUP_PRICE__C)) {
-											pViewData[i].PRICE_LEVEL__C = "= BG";
-										} else if (parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].GROUP_PRICE__C)) {
-											pViewData[i].PRICE_LEVEL__C = "< BG";
-										} else if (pViewData[i].BILLING_PRICE__C === "0.00" || pViewData[i].BILLING_PRICE__C === null || pViewData[i].GROUP_PRICE__C ===
-											null) {
-											pViewData[i].PRICE_LEVEL__C = "N/A";
+								if (pViewData[i].BILLING_PRICE__C === null) {
+									pViewData[i].PRICE_LEVEL__C = "N/A";
+								} else if (pViewData[i].BILLING_PRICE__C) { // added condition for Buyers group fields - Pratik - 30/10
+									//Added by Karan on 03.12.2020 to stop the existing logic for Cushion story 2292 start 
+									if (that.selectedCat !== "Cushion") {
+										//Added by Karan on 03.12.2020 to stop the existing logic for Cushion story 2292 end
+										if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i].BUYING_GROUP_NUMBER__C !== ""
+										) {
+											if (parseFloat(pViewData[i].BILLING_PRICE__C) > parseFloat(pViewData[i].GROUP_PRICE__C)) {
+												pViewData[i].PRICE_LEVEL__C = "> BG";
+											} else if (parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].GROUP_PRICE__C)) {
+												pViewData[i].PRICE_LEVEL__C = "= BG";
+											} else if (parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].GROUP_PRICE__C)) {
+												pViewData[i].PRICE_LEVEL__C = "< BG";
+											} else if (pViewData[i].BILLING_PRICE__C === "0.00" || pViewData[i].BILLING_PRICE__C === null || pViewData[i].GROUP_PRICE__C ===
+												null) {
+												pViewData[i].PRICE_LEVEL__C = "N/A";
+											}
+										} else {
+											if (pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+												pViewData[i].PRICE_LEVEL__C = "N/A";
+											} else if (pViewData[i].BILLING_PRICE__C === "0" && pViewData[i].TM_PRICE__C === "0" && pViewData[i].TM2_PRICE__C ===
+												"0" &&
+												pViewData[i].TM3_PRICE__C === "0" && pViewData[i].DM_PRICE__C === "0" && pViewData[i].RVP_PRICE__C === "0") {
+												pViewData[i].PRICE_LEVEL__C = "N/A";
+											} else if (parseFloat(pViewData[i].BILLING_PRICE__C) > parseFloat(pViewData[i].TM_PRICE__C)) {
+												pViewData[i].PRICE_LEVEL__C = "> TM1";
+											} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].TM_PRICE__C)) &&
+												(parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].TM2_PRICE__C)) && (parseFloat(pViewData[i].BILLING_PRICE__C) ==
+													parseFloat(pViewData[i].TM3_PRICE__C))) {
+												pViewData[i].PRICE_LEVEL__C = "TM1/TM2/TM3";
+											} else if (parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].TM_PRICE__C)) {
+												pViewData[i].PRICE_LEVEL__C = "TM1";
+											} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM_PRICE__C)) && (parseFloat(
+													pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].TM2_PRICE__C))) {
+												pViewData[i].PRICE_LEVEL__C = "TM2";
+											} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM2_PRICE__C)) && (parseFloat(
+													pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].TM3_PRICE__C))) {
+												pViewData[i].PRICE_LEVEL__C = "TM3";
+											} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM3_PRICE__C)) && (parseFloat(
+													pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].DM_PRICE__C))) {
+												pViewData[i].PRICE_LEVEL__C = "DM";
+											} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].DM_PRICE__C)) && (parseFloat(
+													pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].RVP_PRICE__C))) {
+												pViewData[i].PRICE_LEVEL__C = "RVP";
+											} else if (parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].RVP_PRICE__C)) {
+												pViewData[i].PRICE_LEVEL__C = "< RVP";
+											}
+
 										}
+										//Added by Karan on 03.12.2020 for Primary Cushion story 2292 start
 									} else {
-										if (parseFloat(pViewData[i].BILLING_PRICE__C) > parseFloat(pViewData[i].TM_PRICE__C)) {
-											pViewData[i].PRICE_LEVEL__C = "> TM1";
-										} else if (parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].TM_PRICE__C)) {
-											pViewData[i].PRICE_LEVEL__C = "TM1";
-										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM_PRICE__C)) && (parseFloat(
-												pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].TM2_PRICE__C))) {
-											pViewData[i].PRICE_LEVEL__C = "TM2";
-										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM2_PRICE__C)) && (parseFloat(
-												pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].TM3_PRICE__C))) {
-											pViewData[i].PRICE_LEVEL__C = "TM3";
-										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM3_PRICE__C)) && (parseFloat(
-												pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].DM_PRICE__C))) {
+										if (pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+											pViewData[i].PRICE_LEVEL__C = "N/A";
+										} else if (pViewData[i].BILLING_PRICE__C === "0" && (pViewData[i].TM_1_TO_24_PRICE__C === "0" || pViewData[i].TM_1_TO_24_PRICE__C ==
+												null) && (pViewData[i].DM_1_TO_24_PRICE__C === "0" || pViewData[i].DM_1_TO_24_PRICE__C == null) &&
+											(pViewData[i].RVP_1_TO_24_PRICE__C === "0" || pViewData[i].RVP_1_TO_24_PRICE__C == null)) {
+											pViewData[i].PRICE_LEVEL__C = "N/A";
+										} else if (parseFloat(pViewData[i].BILLING_PRICE__C) > parseFloat(pViewData[i].TM_1_TO_24_PRICE__C)) {
+											pViewData[i].PRICE_LEVEL__C = "> TM";
+										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) == parseFloat(pViewData[i].TM_1_TO_24_PRICE__C))) {
+											pViewData[i].PRICE_LEVEL__C = "TM";
+										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].TM_1_TO_24_PRICE__C)) && (parseFloat(
+												pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].DM_1_TO_24_PRICE__C))) {
 											pViewData[i].PRICE_LEVEL__C = "DM";
-										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].DM_PRICE__C)) && (parseFloat(
-												pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].RVP_PRICE__C))) {
+										} else if ((parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].DM_1_TO_24_PRICE__C)) && (parseFloat(
+												pViewData[i].BILLING_PRICE__C) >= parseFloat(pViewData[i].RVP_1_TO_24_PRICE__C))) {
 											pViewData[i].PRICE_LEVEL__C = "RVP";
-										} else if (parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].RVP_PRICE__C)) {
+										} else if (parseFloat(pViewData[i].BILLING_PRICE__C) < parseFloat(pViewData[i].RVP_1_TO_24_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL__C = "< RVP";
 										}
-
 									}
-
+									//Added by Karan on 03.12.2020 for Primary Cushion story 2292 end
 								}
 
 								// Edit Access
 								var editCheck = false;
-								for (var m = 0; m < that.productCode.length; m++) {
+
+								that.brCode = sap.ui.getCore().getModel("configModel").getProperty("/brCode");
+								if (that.brCode && that.brCode.length > 0) { //Added additional condition at the start to check if variable is not undefined by Karan on 03.12.2020
 									for (var n = 0; n < that.brCode.length; n++) {
-										if (pViewData[i].PRODUCT_TYPE__C === that.productCode[m].proCode && pViewData[i].BRAND_CODE__C === that.brCode[n].brand) {
+										if (pViewData[i].ERP_PRODUCT_TYPE__C === that.brCode[n].proCode && pViewData[i].BRAND_CODE__C === that.brCode[n].brand) {
 											editCheck = true;
 											break;
 										}
 									}
+									if (editCheck === true) {
+										pViewData[i].EDITACCESS = "true";
+									} else {
+										pViewData[i].EDITACCESS = "false";
+									}
 								}
-								if (editCheck === true) {
-									pViewData[i].EDITACCESS = "true";
-								} else {
-									pViewData[i].EDITACCESS = "false";
-								}
-								//
 
+								if (pViewData[i].APPROVAL_STATUS__C === "4") {
+									pViewData[i].END_DATE__C = "/Date(" + new Date().getTime() + ")/";
+								}
+
+								//Edit Menu options Item Access Check - 2281
+								if (pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "4") {
+									if (pViewData[i].APPROVAL_STATUS__C === "1") {
+										pViewData[i].EDITMENUCHECK = true;
+										pViewData[i].REMOVEMENUCHECK = true;
+
+									} else if (pViewData[i].APPROVAL_STATUS__C === "4") {
+										pViewData[i].EDITMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = true;
+									}
+								} else {
+									//Edit Menu options Item Access Check - 2281
+									// Added by Binay
+									if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C !== null && (pViewData[i].BUYING_GROUP_PRICE__C !==
+											"X" || pViewData[i].BUYING_GROUP_PRICE__C === null)) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C !== null && (pViewData[i]
+											.BUYING_GROUP_PRICE__C !==
+											"X" || pViewData[i].BUYING_GROUP_PRICE__C === null)) {
+										pViewData[i].EDITCURRMENUCHECK = false;
+										pViewData[i].EDITLIMITEDMENUCHECK = false;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i]
+										.BUYING_GROUP_PRICE__C ===
+										"X") {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i]
+										.BUYING_GROUP_PRICE__C ===
+										"X") {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
+										.PRICE_GRID_UNIQUE_KEY__C ===
+										null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
+										.PRICE_GRID_UNIQUE_KEY__C ===
+										null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
+										.PRICE_GRID_UNIQUE_KEY__C !==
+										null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
+										.PRICE_GRID_UNIQUE_KEY__C !==
+										null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									}
+									// Added by Binay
+								}
 							}
 
-							// sort by name
-							pViewData.sort(function (a, b) {
-								var nameA = a.NAME.toUpperCase(); // ignore upper and lowercase
-								var nameB = b.NAME.toUpperCase(); // ignore upper and lowercase
-								if (nameA < nameB) {
-									return -1;
-								}
-								if (nameA > nameB) {
-									return 1;
-								}
-								// names must be equal
-								return 0;
+							function SortByName(data) {
+								// sort by name
+								data.sort(function (a, b) {
+									var nameA = a.NAME.toUpperCase(); // ignore upper and lowercase
+									var nameB = b.NAME.toUpperCase(); // ignore upper and lowercase
+									if (nameA < nameB) {
+										return -1;
+									}
+									if (nameA > nameB) {
+										return 1;
+									}
+									// names must be equal
+									return 0;
+								});
+							}
+
+							var currentUser = that.loggedInUser;
+							var blueData = pViewData.filter(function (a) {
+								return (a.APPROVAL_STATUS__C == "1" || a.APPROVAL_STATUS__C == "4") && a.MODIFIED_BY__C == currentUser;
 							});
 
-							//var pViewData = pViewModel.getData();
-							pViewModel.setData(pViewData);
-							// that._bindFilters(pViewData, pViewModel);
+							SortByName(blueData);
+
+							var redData = pViewData.filter(function (a) {
+								return (a.APPROVAL_STATUS__C == "2" || a.APPROVAL_STATUS__C == "3") && a.MODIFIED_BY__C == currentUser;
+							});
+
+							SortByName(redData);
+
+							var greenData = pViewData.filter(function (a) {
+								return a.APPROVAL_STATUS__C == "A" && a.MODIFIED_BY__C == currentUser;
+							});
+
+							SortByName(greenData);
+
+							var purpleData = pViewData.filter(function (a) {
+								return a.APPROVAL_STATUS__C == "F" && a.MODIFIED_BY__C == currentUser;
+							});
+
+							SortByName(purpleData);
+							
+							var otherUserData = pViewData.filter(function (a) { return !(a.APPROVAL_STATUS__C === "1" && a.CPL_PRICE_ID__C.length === 13 && a.MODIFIED_BY__C !== currentUser)});
+							
+							var blackData = otherUserData.filter(function (el) {
+                                return !blueData.includes(el) && !redData.includes(el) && !greenData.includes(el) && !purpleData.includes(el);
+                            });
+							/*var blackData = pViewData.filter(function (el) {
+								return !blueData.includes(el) && !redData.includes(el) && !greenData.includes(el) && !purpleData.includes(el) && ((el.APPROVAL_STATUS__C == "1" || el.APPROVAL_STATUS__C == "4" || el.APPROVAL_STATUS__C == "2" || el.APPROVAL_STATUS__C == "3" || el.APPROVAL_STATUS__C == "A" || el.APPROVAL_STATUS__C == "F") && el.MODIFIED_BY__C !== currentUser);
+							});*/
+							
+
+							SortByName(blackData);
+
+							var allData = blueData.concat(redData).concat(greenData).concat(purpleData).concat(blackData);
+
+							pViewModel.setData(allData);
 
 							sap.ui.getCore().setModel(pViewModel, "pViewModel");
 							that.getView().setModel(pViewModel, "pViewModel");
 
+							sap.ui.getCore().busyIndicator.close();	
 							that.bindRecords();
 							that.getView().byId("sortButton").setEnabled(true);
 							that.getView().byId("sortButton2").setEnabled(true);
@@ -1053,8 +1283,7 @@ sap.ui.define([
 							console.log(error);
 							that.getView().byId("sortButton").setEnabled(false);
 							that.getView().byId("sortButton2").setEnabled(false);
-							//sap.m.MessageToast.show("Error");
-							//return false;
+							sap.ui.getCore().busyIndicator.close();
 						}
 					});
 				}
@@ -1064,6 +1293,15 @@ sap.ui.define([
 
 		bindRecords: function () {
 			var pViewData = this.getView().getModel("pViewModel").getData();
+			var oAccountDetails = this.getView().byId("lblAccountNO");
+			if (this.selectedCat === "Cushion") {
+				if(pViewData.length > 0) {
+				oAccountDetails.setText(pViewData[0].ACCOUNT_NAME__C + " (" + pViewData[0].ACCOUNT__C + ")");
+				}
+			} else {
+				oAccountDetails.setText("");
+			}
+
 			var oTable = this.getView().byId("list");
 			oTable.removeAllItems();
 			oTable.removeAllColumns();
@@ -1105,7 +1343,7 @@ sap.ui.define([
 
 			var oOverFlow = new sap.m.OverflowToolbar();
 			oOverFlow.addContent(oHBox);
-			// oTable.setInfoToolbar(oOverFlow);		// Info toolbar can be added later. Not on current functionality // TO BE ADDED
+			oTable.setInfoToolbar(oOverFlow); // Info toolbar can be added later. Not on current functionality // TO BE ADDED
 
 			var tHeader = [];
 			this.primaryCols = this.gridmeta.filter((a) => (a.IS_PRIMARY_DISPLAY__C == "X" && a['PRODUCT_CATEGORY__C'] == this.selectedCat)).sort(
@@ -1144,28 +1382,6 @@ sap.ui.define([
 				icon: "sap-icon://information",
 				type: "Transparent",
 			});
-
-			/*var oText1 = new sap.m.Text({
-				text: "'I' Inherited price from parent list"
-			});
-			var oText2 = new sap.m.Text({
-				text: "'G' Inherited price from group price"
-			});
-			var oText3 = new sap.m.Text({
-				text: "'Q' Prices listed have a minimum quantity"
-			});
-			var oText4 = new sap.m.Text({
-				text: "'C' Cut-at-roll length has a minimum quantity"
-			});
-			var oText5 = new sap.m.Text({
-				text: "'$' Billing price does not match net price"
-			});*/
-
-			/*oFlex.insertItem(oText1);
-			oFlex.insertItem(oText2);
-			oFlex.insertItem(oText3);
-			oFlex.insertItem(oText4);
-			oFlex.insertItem(oText5);*/
 
 			var oText1 = new sap.m.Text({
 				text: "Ɪ"
@@ -1300,19 +1516,27 @@ sap.ui.define([
 						var date = pViewData[i][dateFields[k].field];
 						if (date.split("(").length > 1) {
 							var ms = date.split("(")[1].split(")")[0];
-							pViewData[i][dateFields[k].field] = dateFormat.format(new Date(parseInt(ms)));
+							//Added by Karan on 03.12.2020 to clear end date if year >= 4000 start for bug 3740 and story 2292
+							var dateNew = new Date(parseInt(ms));
+							var year = dateNew.getFullYear();
+							pViewData[i][dateFields[k].field] = year >= 4000 ? "" : dateFormat.format(dateNew);
+							//Added by Karan on 03.12.2020 to clear end date if year >= 4000 end for bug 3740 and story 2292
+							//Added by Karan to clear end date if year > 4000 end
+							//Commented by Karan on 03.12.2020 to pass date only if year < 4000 start bug 3740 and story 2292
+							// pViewData[i][dateFields[k].field] = dateFormat.format(new Date(parseInt(ms)));
+							//Commented by Karan on 03.12.2020 to pass date only if year < 4000 end bug 3740 and story 2292
+						}
+						if (date.split("-").length > 1) {
+							pViewData[i][dateFields[k].field] = dateFormat.format(new Date(date));
 						}
 						//updated - Pratik//
-						pViewData[i][dateFields[k].field] = (pViewData[i][dateFields[k].field] === "12/31/00") || (pViewData[i][dateFields[k].field] ===
-							"12/30/00") ? "" : pViewData[i][dateFields[k].field];
 					}
 				}
 			}
 
 			var oCell = [];
 
-			// for Menu buttons on left. 
-
+			//Edit Menu options Item Access Check - 2281
 			if (tHeader.length > 0) {
 
 				var oMenuBtn = new sap.m.MenuButton({
@@ -1321,12 +1545,31 @@ sap.ui.define([
 							new sap.m.MenuItem({
 								text: "Edit Current Price",
 								icon: "sap-icon://edit",
+								visible: "{= ${pViewModel>EDITCURRMENUCHECK} === true}",
 								press: [this.onItemEdit, this]
+							}), new sap.m.MenuItem({
+								text: "Create Limited Time Price",
+								icon: "sap-icon://create",
+								visible: "{= ${pViewModel>EDITLIMITEDMENUCHECK} === true}",
+								press: [this.onItemEditLimited, this]
 							}),
 							new sap.m.MenuItem({
 								text: "Remove Current Price",
 								icon: "sap-icon://delete",
-								press: [this.onItemRemove, this]
+								visible: "{= ${pViewModel>REMOVECURRMENUCHECK} === true}",
+								press: [this.onItemRemovePrice, this]
+							}),
+							new sap.m.MenuItem({
+								text: "Edit",
+								icon: "sap-icon://edit",
+								visible: "{= ${pViewModel>EDITMENUCHECK} === true}",
+								press: [this.onItemEdit, this]
+							}),
+							new sap.m.MenuItem({
+								text: "Remove",
+								icon: "sap-icon://delete",
+								visible: "{= ${pViewModel>REMOVEMENUCHECK} === true}",
+								press: [this.onItemRemovePrice, this]
 							}),
 						]
 					}).addStyleClass("clsmenuitem"),
@@ -1335,7 +1578,9 @@ sap.ui.define([
 				});
 
 				oCell.push(oMenuBtn);
+
 			}
+			//Edit Menu options Item Access Check - 2281
 
 			//tHeader.sort(that.sortTHeader);
 			for (var j = 0; j < tHeader.length; j++) {
@@ -1363,13 +1608,59 @@ sap.ui.define([
 			});
 			oTable.bindItems("pViewModel>/", aColList);
 
+			//changes for Sorting by Blue color 
+			var that = this;
+			if (pViewData.length > 0) {
+
+				for (var i = 0; i < oTable.getModel("pViewModel").getData().length; i++) {
+					if ((oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "1" || oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C ==
+							"4") && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C == that.loggedInUser) {
+						for (var j = 0; j < oTable.getItems().length; j++) {
+							if (i == j) {
+								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
+									oTable.getItems()[j].getCells()[k].addStyleClass("clrBlue");
+								}
+							}
+						}
+					} else if ((oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "2" || oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C ==
+							"3") && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C == that.loggedInUser) {
+						for (var j = 0; j < oTable.getItems().length; j++) {
+							if (i == j) {
+								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
+									oTable.getItems()[j].getCells()[k].addStyleClass("clrRed");
+								}
+							}
+						}
+					} else if (oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "A" && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C ==
+						that.loggedInUser) {
+						for (var j = 0; j < oTable.getItems().length; j++) {
+							if (i == j) {
+								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
+									oTable.getItems()[j].getCells()[k].addStyleClass("clrGreen");
+								}
+							}
+						}
+					} else if (oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "F" && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C ==
+						that.loggedInUser) {
+						for (var j = 0; j < oTable.getItems().length; j++) {
+							if (i == j) {
+								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
+									oTable.getItems()[j].getCells()[k].addStyleClass("clrPurple");
+								}
+							}
+						}
+					}
+				}
+			}
+			//changes for Sorting by Blue color
+
 			////////
 
 			var oTable2 = this.getView().byId("list2");
 			oTable2.removeAllItems();
 
 			var listFilter = tHeader.filter(function (a) {
-				return a.key == "1" || a.key == "2" || a.key == "3" || a.key == "4";
+				return a.key == "1" || a.key == "2" || a.key == "3" || a.key == "4" || a.key == tHeader.length - 1 + "";
 			});
 			var lData = [];
 			if (listFilter.length > 0) {
@@ -1377,12 +1668,14 @@ sap.ui.define([
 					var f0 = listFilter[0].field.replace('PRODUCT__R.', '');
 					var f1 = listFilter[1].field.replace('PRODUCT__R.', '');
 					var f2 = listFilter[2].field.replace('PRODUCT__R.', '');
-					var f3 = listFilter[3].field.replace('PRODUCT__R.', '');
+					var f3 = listFilter[3].header + ":" + listFilter[3].field.replace('PRODUCT__R.', '');
+					var f4 = listFilter[4].header + ":" + listFilter[4].field.replace('PRODUCT__R.', ''); //  Added by Ronak; Date: 17-Dec-2020; Bug: 3906; For BILLING_PRICE_CUT__C
 					var data = {
 						"intro": pViewData[k][f2],
 						"title": pViewData[k][f1],
 						"number": pViewData[k][f0],
-						"numUnit": pViewData[k][f3]
+						"numUnit": pViewData[k][f3],
+						"firstStatus": pViewData[k][f4]
 					};
 					lData.push(data);
 				}
@@ -1445,8 +1738,37 @@ sap.ui.define([
 			editPriceData[0].EditCutPrice = typeof (editPriceData[0].BILLING_PRICE_CUT__C) === "string" ? editPriceData[0].BILLING_PRICE_CUT__C
 				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_CUT__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_CUT__C) :
 				editPriceData[0].BILLING_PRICE_CUT__C;
-			editPriceData[0].EditCartonPrice = editPriceData[0].BILLING_PRICE_ROLL__C;
-			editPriceData[0].EditEachPrice = editPriceData[0].BILLING_PRICE_ROLL__C;
+			editPriceData[0].EditCartonPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+
+			editPriceData[0].EditEachPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
+				pattern: "yyyy-MM-dd"
+			});
+
+			for (var i = 0; i < pViewData.length; i++) {
+				if (pViewData[i].CPL_PRICE_ID__C !== null) {
+					if (pViewData[i].CPL_PRICE_ID__C === editPriceData[0].CPL_PRICE_ID__C) {
+						if (pViewData[i].EDIT_START_DATE != null) {
+							if (pViewData[i].EDIT_START_DATE.split("(").length > 1) {
+								var startdate = pViewData[i].EDIT_START_DATE.split("(")[1].split(")")[0];
+								pViewData[i].EDIT_START_DATE = dateFormat.format(new Date(parseInt(startdate)));
+								editPriceData[0].EDIT_START_DATE = pViewData[i].EDIT_START_DATE;
+							}
+						}
+						if (pViewData[i].EDIT_END_DATE != null) {
+							if (pViewData[i].EDIT_END_DATE.split("(").length > 1) {
+								var enddate = pViewData[i].EDIT_END_DATE.split("(")[1].split(")")[0];
+								pViewData[i].EDIT_END_DATE = dateFormat.format(new Date(parseInt(enddate)));
+								editPriceData[0].EDIT_END_DATE = pViewData[i].EDIT_END_DATE;
+							}
+						}
+					}
+				}
+			}
 
 			var editModel = new JSONModel(editPriceData);
 			this.getView().setModel(editModel, "editModel");
@@ -1459,11 +1781,13 @@ sap.ui.define([
 			this._oDialogPGsurface.open();
 
 			sap.ui.getCore().byId("sbsurfaceLevel").setSelectedItem("-1");
+			sap.ui.getCore().byId("sbAccLevel").setSelectedItem("-1");
+			sap.ui.getCore().byId("sbBGLevel").setSelectedItem("-1");
 
 			var txtSFCurrPrice = sap.ui.getCore().byId("txtSFCurrPrice");
 			var txtHFCurrPrice = sap.ui.getCore().byId("txtHFCurrPrice");
 			var txtACCurrPrice = sap.ui.getCore().byId("txtACCurrPrice");
-			var txtBGurrPrice = sap.ui.getCore().byId("txtBGurrPrice");
+			// var txtBGurrPrice = sap.ui.getCore().byId("txtBGurrPrice");
 
 			var txtRoll = sap.ui.getCore().byId("txtRoll");
 			var txtCut = sap.ui.getCore().byId("txtCut");
@@ -1498,12 +1822,64 @@ sap.ui.define([
 				lblCarton.setVisible(false);
 				lblEach.setVisible(false);
 
-				if (editPriceData[0].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null) {
+				//CPL Edit & Edit Menu options - 2281
+				if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
+					"" && (editPriceData[0].BUYING_GROUP_PRICE__C !==
+						"X" || editPriceData[0].BUYING_GROUP_PRICE__C === null)) {
 					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else {
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
+					(editPriceData[0].BUYING_GROUP_PRICE__C !== "X" || editPriceData[0].BUYING_GROUP_PRICE__C === null)) {
 					sbBGLevel.setVisible(false);
+					sbBGLevel.setEnabled(false);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
+					editPriceData[0].BUYING_GROUP_PRICE__C ===
+					"X") {
+					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(true);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
+					"" && editPriceData[0].BUYING_GROUP_PRICE__C ===
+					"X") {
+					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(true);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
+						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
+						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
+						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setVisible(true);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
+						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setVisible(true);
 					sbAccLevel.setVisible(false);
 				}
@@ -1524,10 +1900,65 @@ sap.ui.define([
 				lblCarton.setVisible(true);
 				lblEach.setVisible(false);
 
-				if (editPriceData[0].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null) {
+				if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
+					"" && editPriceData[0].BUYING_GROUP_PRICE__C !==
+					"X") {
 					sbBGLevel.setVisible(true);
-				} else {
+					sbBGLevel.setEnabled(false);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
+					editPriceData[0].BUYING_GROUP_PRICE__C !==
+					"X") {
+					sbBGLevel.setVisible(false);
+					sbBGLevel.setEnabled(false);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
+					editPriceData[0].BUYING_GROUP_PRICE__C ===
+					"X") {
+					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(true);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
+					"" && editPriceData[0].BUYING_GROUP_PRICE__C ===
+					"X") {
+					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(true);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
+						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
+						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
+						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(true);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
+						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(true);
 					sbAccLevel.setVisible(false);
 				}
 
@@ -1546,18 +1977,83 @@ sap.ui.define([
 				lblCarton.setVisible(false);
 				lblEach.setVisible(true);
 
-				if (editPriceData[0].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null) {
+				if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
+					"" && editPriceData[0].BUYING_GROUP_PRICE__C !==
+					"X") {
 					sbBGLevel.setVisible(true);
-				} else {
-					sbsurfaceLevel.setVisible(true);
+					sbBGLevel.setEnabled(false);
+					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
+					editPriceData[0].BUYING_GROUP_PRICE__C !==
+					"X") {
+					sbBGLevel.setVisible(false);
+					sbBGLevel.setEnabled(false);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
+					editPriceData[0].BUYING_GROUP_PRICE__C ===
+					"X") {
+					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(true);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
+					"" && editPriceData[0].BUYING_GROUP_PRICE__C ===
+					"X") {
+					sbBGLevel.setVisible(true);
+					sbBGLevel.setEnabled(true);
+					sbsurfaceLevel.setVisible(false);
+					sbAccLevel.setVisible(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
+						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(true);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
+						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(true);
+					sbAccLevel.setEnabled(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
+						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(true);
+					sbAccLevel.setEnabled(true);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
+						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(true);
+					sbAccLevel.setEnabled(true);
 				}
 
 			}
+
+			that.txtRoll = sap.ui.getCore().byId("txtRoll");
+			that.txtCut = sap.ui.getCore().byId("txtCut");
+
+			that.txtCarton = sap.ui.getCore().byId("txtCarton");
+			that.txtEach = sap.ui.getCore().byId("txtEach");
 		},
 
 		OnCancelPGSurface: function () {
 			this._oDialogPGsurface.close();
+			this.fetchProducts();
 		},
 
 		afterClosePGSurface: function () {
@@ -1569,17 +2065,89 @@ sap.ui.define([
 
 		OnNext: function (oEvent) {
 			var that = this;
-			this._oDialogPGsurface.close();
-			that.afterClosePGSurface();
+			var editPriceData = this.getView().getModel("editModel").getData();
+			var txtRoll = sap.ui.getCore().byId("txtRoll");
+			var txtCut = sap.ui.getCore().byId("txtCut");
+			var txtCarton = sap.ui.getCore().byId("txtCarton");
+			var txtEach = sap.ui.getCore().byId("txtEach");
+			that.txtRoll1 = txtRoll.getValue();
+			that.txtCut1 = txtCut.getValue();
+			that.txtCarton11 = txtCarton.getValue();
+			that.txtEach11 = txtEach.getValue();
 
-			if (!this._oDialogJustification) {
-				this._oDialogJustification = sap.ui.xmlfragment("cf.cpl.fragments.Justification", this);
-				this.getView().addDependent(this._oDialogJustification);
+			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+			//if (that.txtRoll1 === 0) { 
+			if (that.txtRoll1 < 1) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				txtRoll.setValueState("Error");
+				MessageToast.show("Price should be greater than $1 !");
+				return
+			}
+			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+			//else if (that.txtCut1 === 0) {
+			else if (that.txtCut1 < 1) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				txtCut.setValueState("Error");
+				MessageToast.show("Price should be greater than $1 !");
+				return
+			}
+			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+			//else if (that.txtCarton11 === 0) {
+			else if (that.txtCarton11 < 0.05) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				txtCarton.setValueState("Error");
+				MessageToast.show("Price should be greater than 5 cents !");
+				return
+			}
+			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+			//else if (that.txtEach11 === 0) {
+			else if (that.txtEach11 < 0.05) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>	
+				txtEach.setValueState("Error");
+				MessageToast.show("Price should be greater than 5 cents !");
+				return
+
+			} else {
+				editPriceData[0].BILLING_PRICE_ROLL__C = typeof (editPriceData[0].BILLING_PRICE_ROLL__C) === "string" ? editPriceData[0].BILLING_PRICE_ROLL__C
+					.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C) :
+					editPriceData[0].BILLING_PRICE_ROLL__C;
+
+				editPriceData[0].BILLING_PRICE_CUT__C = typeof (editPriceData[0].BILLING_PRICE_CUT__C) === "string" ? editPriceData[0].BILLING_PRICE_CUT__C
+					.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_CUT__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_CUT__C) :
+					editPriceData[0].BILLING_PRICE_CUT__C;
+				editPriceData[0].BILLING_PRICE__C = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+					.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+					editPriceData[0].BILLING_PRICE__C;
+				if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
+					"Resilient Sheet") {
+					if (that.txtRoll1 === editPriceData[0].BILLING_PRICE_ROLL__C || that.txtCut1 === editPriceData[0].BILLING_PRICE_CUT__C) {
+						MessageBox.alert("Price is not changed !");
+						return;
+					}
+				} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
+					"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
+
+					if (that.txtCarton11 === editPriceData[0].BILLING_PRICE__C) {
+						MessageBox.alert("Price is not changed !");
+						return;
+					}
+				} else if (that.selectedCat === "Accessories") {
+					if (that.txtEach11 === editPriceData[0].BILLING_PRICE__C) {
+						MessageBox.alert("Price is not changed !");
+						return;
+					}
+				}
+				this._oDialogPGsurface.close();
+				that.afterClosePGSurface();
+
+				if (!this._oDialogJustification) {
+					this._oDialogJustification = sap.ui.xmlfragment("cf.cpl.fragments.Justification", this);
+					this.getView().addDependent(this._oDialogJustification);
+				}
+
+				this._oDialogJustification.open();
+				var rdbReason = sap.ui.getCore().byId("rdbReason");
+
+				rdbReason.setSelectedButton(false);
+
 			}
 
-			this._oDialogJustification.open();
-			var rdbReason = sap.ui.getCore().byId("rdbReason");
-			rdbReason.setSelectedButton(false);
 		},
 
 		OnCancelJustification: function (oEvent) {
@@ -1602,12 +2170,16 @@ sap.ui.define([
 
 		onSelectionReason: function (oEvent) {
 			var rdbReason = sap.ui.getCore().byId("rdbReason");
+			var lblreasonerrmsg = sap.ui.getCore().byId("lblreasonerrmsg");
+			var lblPromocodeMsg = sap.ui.getCore().byId("lblPromocodeMsg");
 			rdbReason.setValueState("None");
+			lblreasonerrmsg.setVisible(false);
 			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
 			if (oEvent.getSource().getSelectedButton().getText() === "Promo Code") {
 				txtPromocode.setVisible(true);
 			} else {
 				txtPromocode.setVisible(false);
+				lblPromocodeMsg.setVisible(false);
 			}
 		},
 
@@ -1627,6 +2199,7 @@ sap.ui.define([
 				this.getView().addDependent(this._valueHelpDialogPromocode);
 			}
 
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: "pricing/PriceGrid.xsodata/PromoCode?$format=json",
 				contentType: "application/json",
@@ -1639,12 +2212,13 @@ sap.ui.define([
 					that.getView().setModel(promoModel, "promoModel");
 					that._valueHelpDialogPromocode.setModel(promoModel, "promoModel");
 					that._valueHelpDialogPromocode.open(sInputPromocode);
+					sap.ui.getCore().busyIndicator.close();
 				},
-				error: function (error) {}
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
 			});
 
-			// open value help dialog filtered by the input value
-			// this._valueHelpDialogPromocode.open(sInputPromocode);
 		},
 
 		_handleValueHelpSearchPromocode: function (evt) {
@@ -1665,115 +2239,599 @@ sap.ui.define([
 
 			}
 			oEvent.getSource().getBinding("items").filter([]);
+			var lblPromocodeMsg = sap.ui.getCore().byId("lblPromocodeMsg");
+			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
+			txtPromocode.setValueState("None");
+			lblPromocodeMsg.setVisible(false);
 		},
 
 		onSurfaceBtnChange: function (oEvent) {
 			var clickedBtn = oEvent.getParameters().item.getKey();
 			var editPriceData = this.getView().getModel("editModel").getData();
-			if (clickedBtn === "TM1") {
-				editPriceData[0].EditRollPrice = typeof (editPriceData[0].TM1_ROLL_PRICE__C) === "string" ? editPriceData[0].TM1_ROLL_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].TM1_ROLL_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].TM1_ROLL_PRICE__C) :
-					editPriceData[0].TM1_ROLL_PRICE__C;
-				editPriceData[0].EditCutPrice = typeof (editPriceData[0].TM1_CUT_PRICE__C) === "string" ? editPriceData[0].TM1_CUT_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].TM1_CUT_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].TM1_CUT_PRICE__C) :
-					editPriceData[0].TM1_CUT_PRICE__C;
-			} else if (clickedBtn === "TM2") {
-				editPriceData[0].EditRollPrice = typeof (editPriceData[0].TM2_ROLL_PRICE__C) === "string" ? editPriceData[0].TM2_ROLL_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].TM2_ROLL_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].TM2_ROLL_PRICE__C) :
-					editPriceData[0].TM2_ROLL_PRICE__C;
-				editPriceData[0].EditCutPrice = typeof (editPriceData[0].TM2_CUT_PRICE__C) === "string" ? editPriceData[0].TM2_CUT_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].TM2_CUT_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].TM2_CUT_PRICE__C) :
-					editPriceData[0].TM2_CUT_PRICE__C;
-			} else if (clickedBtn === "TM3") {
-				editPriceData[0].EditRollPrice = typeof (editPriceData[0].TM3_ROLL_PRICE__C) === "string" ? editPriceData[0].TM3_ROLL_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].TM3_ROLL_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].TM3_ROLL_PRICE__C) :
-					editPriceData[0].TM3_ROLL_PRICE__C;
-				editPriceData[0].EditCutPrice = typeof (editPriceData[0].TM3_CUT_PRICE__C) === "string" ? editPriceData[0].TM3_CUT_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].TM3_CUT_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].TM3_CUT_PRICE__C) :
-					editPriceData[0].TM3_CUT_PRICE__C;
-			} else if (clickedBtn === "DM") {
-				editPriceData[0].EditRollPrice = typeof (editPriceData[0].DM_ROLL_PRICE__C) === "string" ? editPriceData[0].DM_ROLL_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].DM_ROLL_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].DM_ROLL_PRICE__C) :
-					editPriceData[0].DM_ROLL_PRICE__C;
-				editPriceData[0].EditCutPrice = typeof (editPriceData[0].DM_CUT_PRICE__C) === "string" ? editPriceData[0].DM_CUT_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].DM_CUT_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].DM_CUT_PRICE__C) :
-					editPriceData[0].DM_CUT_PRICE__C;
-			} else if (clickedBtn === "RVP") {
-				editPriceData[0].EditRollPrice = typeof (editPriceData[0].RVP_ROLL_PRICE__C) === "string" ? editPriceData[0].RVP_ROLL_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].RVP_ROLL_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].RVP_ROLL_PRICE__C) :
-					editPriceData[0].RVP_ROLL_PRICE__C;
-				editPriceData[0].EditCutPrice = typeof (editPriceData[0].RVP_CUT_PRICE__C) === "string" ? editPriceData[0].RVP_CUT_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].RVP_CUT_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].RVP_CUT_PRICE__C) :
-					editPriceData[0].RVP_CUT_PRICE__C;
+			if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
+				"Resilient Sheet") {
+				if (clickedBtn === "TM1") {
+					if (editPriceData[0].TM1_ROLL_PRICE__C === null || editPriceData[0].TM1_ROLL_PRICE__C === "") {
+						editPriceData[0].EditRollPrice = "1";
+					} else {
+						editPriceData[0].EditRollPrice = editPriceData[0].TM1_ROLL_PRICE__C;
+					}
+					if (editPriceData[0].TM1_CUT_PRICE__C === null || editPriceData[0].TM1_CUT_PRICE__C === "") {
+
+						editPriceData[0].EditCutPrice = "1";
+					} else {
+
+						editPriceData[0].EditCutPrice = editPriceData[0].TM1_CUT_PRICE__C;
+					}
+
+				} else if (clickedBtn === "TM2") {
+					if (editPriceData[0].TM2_ROLL_PRICE__C === null || editPriceData[0].TM2_ROLL_PRICE__C === "") {
+						editPriceData[0].EditRollPrice = "1";
+					} else {
+						editPriceData[0].EditRollPrice = editPriceData[0].TM2_ROLL_PRICE__C;
+					}
+
+					if (editPriceData[0].TM2_CUT_PRICE__C === null || editPriceData[0].TM2_CUT_PRICE__C === "") {
+
+						editPriceData[0].EditCutPrice = "1";
+					} else {
+
+						editPriceData[0].EditCutPrice = editPriceData[0].TM2_CUT_PRICE__C;
+					}
+
+				} else if (clickedBtn === "TM3") {
+					if (editPriceData[0].TM3_ROLL_PRICE__C === null || editPriceData[0].TM3_ROLL_PRICE__C === "") {
+						editPriceData[0].EditRollPrice = "1";
+					} else {
+						editPriceData[0].EditRollPrice = editPriceData[0].TM3_ROLL_PRICE__C;
+					}
+
+					if (editPriceData[0].TM3_CUT_PRICE__C === null || editPriceData[0].TM3_CUT_PRICE__C === "") {
+
+						editPriceData[0].EditCutPrice = "1";
+					} else {
+
+						editPriceData[0].EditCutPrice = editPriceData[0].TM3_CUT_PRICE__C;
+					}
+
+				} else if (clickedBtn === "DM") {
+					if (editPriceData[0].DM_ROLL_PRICE__C === null || editPriceData[0].DM_ROLL_PRICE__C === "") {
+						editPriceData[0].EditRollPrice = "1";
+					} else {
+						editPriceData[0].EditRollPrice = editPriceData[0].DM_ROLL_PRICE__C;
+					}
+
+					if (editPriceData[0].DM_CUT_PRICE__C === null || editPriceData[0].DM_CUT_PRICE__C === "") {
+
+						editPriceData[0].EditCutPrice = "1";
+					} else {
+
+						editPriceData[0].EditCutPrice = editPriceData[0].DM_CUT_PRICE__C;
+					}
+
+				} else if (clickedBtn === "RVP") {
+					if (editPriceData[0].RVP_ROLL_PRICE__C === null || editPriceData[0].RVP_ROLL_PRICE__C === "") {
+						editPriceData[0].EditRollPrice = "1";
+					} else {
+						editPriceData[0].EditRollPrice = editPriceData[0].RVP_ROLL_PRICE__C;
+					}
+
+					if (editPriceData[0].RVP_CUT_PRICE__C === null || editPriceData[0].RVP_CUT_PRICE__C === "") {
+
+						editPriceData[0].EditCutPrice = "1";
+					} else {
+
+						editPriceData[0].EditCutPrice = editPriceData[0].RVP_CUT_PRICE__C;
+					}
+				}
+			} else if (this.selectedCat === "Carpet Tile" || this.selectedCat === "Tile" || this.selectedCat === "TecWood" || this.selectedCat ===
+				"SolidWood" || this.selectedCat === "RevWood" || this.selectedCat === "Resilient Tile") {
+				if (clickedBtn === "TM1") {
+					if (editPriceData[0].TM_PRICE__C === null || editPriceData[0].TM_PRICE__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+					} else {
+						editPriceData[0].EditCartonPrice = editPriceData[0].TM_PRICE__C;
+					}
+				} else if (clickedBtn === "TM2") {
+					if (editPriceData[0].TM2_PRICE__C === null || editPriceData[0].TM2_PRICE__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+					} else {
+						editPriceData[0].EditCartonPrice = editPriceData[0].TM2_PRICE__C;
+					}
+				} else if (clickedBtn === "TM3") {
+					if (editPriceData[0].TM3_PRICE__C === null || editPriceData[0].TM3_PRICE__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+					} else {
+						editPriceData[0].EditCartonPrice = editPriceData[0].TM3_PRICE__C;
+					}
+				} else if (clickedBtn === "DM") {
+					if (editPriceData[0].DM_PRICE__C === null || editPriceData[0].DM_PRICE__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+					} else {
+						editPriceData[0].EditCartonPrice = editPriceData[0].DM_PRICE__C;
+					}
+				} else if (clickedBtn === "RVP") {
+					if (editPriceData[0].RVP_PRICE__C === null || editPriceData[0].RVP_PRICE__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+					} else {
+						editPriceData[0].EditCartonPrice = editPriceData[0].RVP_PRICE__C;
+					}
+				}
 			}
 			this.getView().getModel("editModel").setData(editPriceData);
 		},
 
 		onAccesBtnChange: function (oEvent) {
 			var clickedBtn = oEvent.getParameters().item.getKey();
+			var editPriceData = this.getView().getModel("editModel").getData();
+		/*	if (clickedBtn === "TM") {
+				if (editPriceData[0].TM_PRICE__C === null || editPriceData[0].TM_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].TM_PRICE__C;
+				}
+			} else if (clickedBtn === "DM") {
+				if (editPriceData[0].DM_PRICE__C === null || editPriceData[0].DM_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].DM_PRICE__C;
+				}
+			} else if (clickedBtn === "RVP") {
+				if (editPriceData[0].RVP_PRICE__C === null || editPriceData[0].RVP_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].RVP_PRICE__C;
+				}
+			}*/
+			//Changes by diksha to set level of ACCESSORIES To TM1,TM2,TM3,DM,RVP  --1/1/2020
+				if (clickedBtn === "TM1") {
+					if (editPriceData[0].TM_PRICE__C === null || editPriceData[0].TM_PRICE__C === "") {
+						editPriceData[0].EditEachPrice = "0.05";
+					} else {
+						editPriceData[0].EditEachPrice = editPriceData[0].TM_PRICE__C;
+					}
+				} else if (clickedBtn === "TM2") {
+					if (editPriceData[0].TM2_PRICE__C === null || editPriceData[0].TM2_PRICE__C === "") {
+						editPriceData[0].EditEachPrice = "0.05";
+					} else {
+						editPriceData[0].EditEachPrice = editPriceData[0].TM2_PRICE__C;
+					}
+				} else if (clickedBtn === "TM3") {
+					if (editPriceData[0].TM3_PRICE__C === null || editPriceData[0].TM3_PRICE__C === "") {
+						editPriceData[0].EditEachPrice = "0.05";
+					} else {
+						editPriceData[0].EditEachPrice = editPriceData[0].TM3_PRICE__C;
+					}
+				} else if (clickedBtn === "DM") {
+					if (editPriceData[0].DM_PRICE__C === null || editPriceData[0].DM_PRICE__C === "") {
+						editPriceData[0].EditEachPrice = "0.05";
+					} else {
+						editPriceData[0].EditEachPrice = editPriceData[0].DM_PRICE__C;
+					}
+				} else if (clickedBtn === "RVP") {
+					if (editPriceData[0].RVP_PRICE__C === null || editPriceData[0].RVP_PRICE__C === "") {
+						editPriceData[0].EditEachPrice = "0.05";
+					} else {
+						editPriceData[0].EditEachPrice = editPriceData[0].RVP_PRICE__C;
+					}
+				}
+			this.getView().getModel("editModel").setData(editPriceData);
 		},
 
 		onBGBtnChange: function (oEvent) {
 			var clickedBtn = oEvent.getParameters().item.getKey();
+			var editPriceData = this.getView().getModel("editModel").getData();
+			if (clickedBtn === "BG") {
+				if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
+					"Resilient Sheet") {
+					if (editPriceData[0].GROUP_ROLL_PRICE__C === null || editPriceData[0].GROUP_ROLL_PRICE__C === "") {
+						editPriceData[0].EditRollPrice = "1";
+					} else {
+						editPriceData[0].EditRollPrice = editPriceData[0].GROUP_ROLL_PRICE__C;
+					}
+
+					if (editPriceData[0].GROUP_CUT_PRICE__C === null || editPriceData[0].GROUP_CUT_PRICE__C === "") {
+
+						editPriceData[0].EditCutPrice = "1";
+					} else {
+
+						editPriceData[0].EditCutPrice = editPriceData[0].GROUP_CUT_PRICE__C;
+					}
+
+				} else if (this.selectedCat === "Carpet Tile" || this.selectedCat === "Tile" || this.selectedCat === "TecWood" || this.selectedCat ===
+					"SolidWood" || this.selectedCat === "RevWood" || this.selectedCat === "Resilient Tile") {
+					if (editPriceData[0].GROUP_PRICE_CARTON__C === null || editPriceData[0].GROUP_PRICE_CARTON__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+
+					} else {
+						editPriceData[0].EditCartonPrice = editPriceData[0].GROUP_PRICE_CARTON__C;
+
+					}
+				} else if (this.selectedCat === "Accessories") {
+					if (editPriceData[0].GROUP_PRICE_CARTON__C === null || editPriceData[0].GROUP_PRICE_CARTON__C === "") {
+						editPriceData[0].EditCartonPrice = "0.05";
+
+					} else {
+						editPriceData[0].EditEachPrice = editPriceData[0].GROUP_PRICE__C;
+
+					}
+				}
+			}
+			this.getView().getModel("editModel").setData(editPriceData);
 		},
 
 		onSavePrice: function () {
-			// var that = this;
+			var that = this;
+			var oModelPromo = that.getView().getModel("promoModel");
+			var editPriceData = this.getView().getModel("editModel").getData();
+			var txtRoll1 = sap.ui.getCore().byId("idtxtRoll1").setText(that.txtRoll);
+			var txtCut1 = sap.ui.getCore().byId("idtxtCut1").setText(that.txtCut);
+
+			var txtCarton11 = sap.ui.getCore().byId("idtxtCarton1").setText(that.txtCarton);
+			var txtEach11 = sap.ui.getCore().byId("idtxtEach1").setText(that.txtEach);
 			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
+			var lblPromocodeMsg = sap.ui.getCore().byId("lblPromocodeMsg");
 			var txtComment = sap.ui.getCore().byId("txtComment");
 			var lblcommenterrmsg = sap.ui.getCore().byId("lblcommenterrmsg");
 			var rdbReason = sap.ui.getCore().byId("rdbReason");
 			var lblreasonerrmsg = sap.ui.getCore().byId("lblreasonerrmsg");
+
 			if (rdbReason.getSelectedButton() === undefined) {
 				lblreasonerrmsg.setVisible(true);
 				rdbReason.setValueState("Error");
+
 			} else {
 				lblreasonerrmsg.setVisible(false);
 				if (rdbReason.getSelectedButton().getText() === "Promo Code" && txtPromocode.getValue() === "") {
 					txtPromocode.setValueState("Error");
+					lblPromocodeMsg.setVisible(true);
 					return;
 				} else {
 					txtPromocode.setValueState("None");
+					lblPromocodeMsg.setVisible(false);
 				}
 			}
 
-			if (txtComment.getValue() === "" || txtComment.getValue() === null) {
-				lblcommenterrmsg.setVisible(true);
-				txtComment.setValueState("Error");
-				return;
-			} else {
-				lblcommenterrmsg.setVisible(false);
-				txtComment.setValueState("None");
+			var PromocodeFlag = false;
+			if (txtPromocode.getValue() !== "") {
+				for (var m = 0; m < oModelPromo.getData().length; m++) {
+					if (txtPromocode.getValue() === oModelPromo.getData()[m].PROMO_CODE__C) {
+						PromocodeFlag = true;
+						break;
+					}
+
+				}
+				if (PromocodeFlag === false) {
+					txtPromocode.setValueState("Error");
+					lblPromocodeMsg.setVisible(true);
+					return;
+				}
 			}
 
+			editPriceData[0].BILLING_PRICE_ROLL__C = typeof (editPriceData[0].BILLING_PRICE_ROLL__C) === "string" ? editPriceData[0].BILLING_PRICE_ROLL__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C) :
+				editPriceData[0].BILLING_PRICE_ROLL__C;
+
+			editPriceData[0].BILLING_PRICE_CUT__C = typeof (editPriceData[0].BILLING_PRICE_CUT__C) === "string" ? editPriceData[0].BILLING_PRICE_CUT__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_CUT__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_CUT__C) :
+				editPriceData[0].BILLING_PRICE_CUT__C;
+			editPriceData[0].BILLING_PRICE__C = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+
+			editPriceData[0].DM_ROLL_PRICE__C = parseFloat(editPriceData[0].DM_ROLL_PRICE__C, 10);
+			editPriceData[0].DM_CUT_PRICE__C = parseFloat(editPriceData[0].DM_CUT_PRICE__C, 10);
+			editPriceData[0].DM_PRICE__C = parseFloat(editPriceData[0].DM_PRICE__C, 10);
+			editPriceData[0].RVP_ROLL_PRICE__C = parseFloat(editPriceData[0].RVP_ROLL_PRICE__C, 10);
+			editPriceData[0].RVP_CUT_PRICE__C = parseFloat(editPriceData[0].RVP_CUT_PRICE__C, 10);
+			editPriceData[0].RVP_PRICE__C = parseFloat(editPriceData[0].RVP_PRICE__C, 10);
+
+			editPriceData[0].EditCartonPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+
+			editPriceData[0].EditEachPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+
+			editPriceData[0].EditRollPrice = parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C, 10);
+			editPriceData[0].EditCutPrice = parseFloat(editPriceData[0].BILLING_PRICE_CUT__C, 10);
+
+			if (txtComment.getValue() === "" || txtComment.getValue() === null || rdbReason.getSelectedButton() === undefined) {
+
+				if (that.userRole === "TM") {
+					if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
+						"Resilient Sheet") {
+						if ((that.txtRoll1 > editPriceData[0].DM_ROLL_PRICE__C) && (that.txtCut1 >
+								editPriceData[0].DM_CUT_PRICE__C)) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if ((that.txtRoll1 <= editPriceData[0].DM_ROLL_PRICE__C) || (that.txtCut1 <=
+								editPriceData[0].DM_CUT_PRICE__C)) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
+						"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
+						if (that.txtCarton11 > editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+
+						} else if (that.txtCarton11 <= editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					} else if (that.selectedCat === "Accessories") {
+						if (that.txtEach11 > editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtEach11 <= editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					}
+
+				} else if (that.userRole === "DM") {
+					if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
+						"Resilient Sheet") {
+						if ((that.txtRoll1 >= editPriceData[0].DM_ROLL_PRICE__C) && (that.txtCut1 >=
+								editPriceData[0].DM_CUT_PRICE__C)) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if ((that.txtRoll1 < editPriceData[0].DM_ROLL_PRICE__C) || (that.txtCut1 <
+								editPriceData[0].DM_CUT_PRICE__C)) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
+						"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
+						if (that.txtCarton11 >= editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtCarton11 < editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					} else if (that.selectedCat === "Accessories") {
+						if (that.txtEach11 >= editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtEach11 < editPriceData[0].DM_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					}
+
+				} else if (that.userRole === "RVP") {
+					if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
+						"Resilient Sheet") {
+						if ((that.txtRoll1 >= editPriceData[0].RVP_ROLL_PRICE__C) && (that.txtCut1 >=
+								editPriceData[0].RVP_CUT_PRICE__C)) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if ((that.txtRoll1 < editPriceData[0].RVP_ROLL_PRICE__C) || (that.txtCut1 <
+								editPriceData[0].RVP_CUT_PRICE__C)) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
+						"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
+						if (that.txtCarton11 >= editPriceData[0].RVP_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtCarton11 < editPriceData[0].RVP_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					} else if (that.selectedCat === "Accessories") {
+						if (that.txtEach11 >= editPriceData[0].RVP_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdbReason.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtEach11 < editPriceData[0].RVP_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+							}
+							return;
+						}
+					}
+
+				}
+			}
 			var editPriceData = this.getView().getModel("editModel").getData()[0];
 
 			var updateUrl = "";
 			var payload = ""
 			var reqNetPriceCut = "";
 			var reqNetPriceRoll = "";
+			var reqNetPriceAcc = "";
 			var justification = "";
+			var reqNetPriceCarton = "";
 
-			switch (rdbReason.getSelectedButton().getText()) {
-			case "Promotional Price":
-				justification = "1";
-				break;
-			case "Stocking Price":
-				justification = "2";
-				break;
-			case "Competitor Price Match":
-				justification = "3";
-				break;
-			case "Promo Code":
-				justification = "4";
-				break;
-			case "Other":
-				justification = "5";
-				break;
-			default:
-				justification = "";
-				break;
+			if (rdbReason.getSelectedButton() !== undefined) {
+				switch (rdbReason.getSelectedButton().getText()) {
+				case "Promotional Price":
+					justification = "1";
+					break;
+				case "Stocking Price":
+					justification = "2";
+					break;
+				case "Competitor Price Match":
+					justification = "3";
+					break;
+				case "Promo Code":
+					justification = "4";
+					break;
+				case "Other":
+					justification = "5";
+					break;
+				default:
+					justification = "";
+					break;
+				}
 			}
+
+			//changes for Sorting by Blue color 
+			if (editPriceData.EditCutPrice === null || editPriceData.EditCutPrice === undefined) {
+				editPriceData.EditCutPrice = 0;
+
+			} else {
+				editPriceData.EditCutPrice = editPriceData.EditCutPrice;
+			}
+			if (editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C === null || editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C === undefined) {
+				editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C = 0;
+
+			} else {
+				editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C = editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C;
+			}
+			if (editPriceData.CORPORATE_CUT_PALLET_PERCENT__C === null || editPriceData.CORPORATE_CUT_PALLET_PERCENT__C === undefined) {
+				editPriceData.CORPORATE_CUT_PALLET_PERCENT__C = 0;
+
+			} else {
+				editPriceData.CORPORATE_CUT_PALLET_PERCENT__C = editPriceData.CORPORATE_CUT_PALLET_PERCENT__C;
+			}
+
+			if (editPriceData.EditRollPrice === null || editPriceData.EditRollPrice === undefined) {
+				editPriceData.EditRollPrice = 0;
+
+			} else {
+				editPriceData.EditRollPrice = editPriceData.EditRollPrice;
+			}
+			if (editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C === null || editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C === undefined) {
+				editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C = 0;
+
+			} else {
+				editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C = editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C;
+			}
+			if (editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C === null || editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C === undefined) {
+				editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C = 0;
+
+			} else {
+				editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C = editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C;
+			}
+
+			if (editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C === null || editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C === undefined) {
+				editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C = 0;
+
+			} else {
+				editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C = editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C;
+			}
+			if (editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C === null || editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C === undefined) {
+				editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C = 0;
+
+			} else {
+				editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C = editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C;
+			}
+			if (editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C === null || editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C === undefined) {
+				editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C = 0;
+
+			} else {
+				editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C = editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C;
+			}
+			if (editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C === null || editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C === undefined) {
+				editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C = 0;
+
+			} else {
+				editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C = editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C;
+			}
+
+			if (editPriceData.EditCartonPrice === null || editPriceData.EditCartonPrice === undefined) {
+				editPriceData.EditCartonPrice = 0;
+
+			} else {
+				editPriceData.EditCartonPrice = editPriceData.EditCartonPrice;
+			}
+			//changes for Sorting by Blue color 
 
 			if (editPriceData.BILLING_PRICE_ROLL__C) {
 				if (editPriceData.BUYING_GROUP_NUMBER__C !== null) {
@@ -1782,96 +2840,372 @@ sap.ui.define([
 
 					reqNetPriceRoll = parseFloat(editPriceData.EditRollPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
 						parseFloat(editPriceData.EditRollPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
 				} else {
 					reqNetPriceCut = parseFloat(editPriceData.EditCutPrice) - (parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C) +
 						parseFloat(editPriceData.EditCutPrice) * parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C) / 100);
 
 					reqNetPriceRoll = parseFloat(editPriceData.EditRollPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
 						parseFloat(editPriceData.EditRollPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
 				}
+
+				if (reqNetPriceCut === "") {
+					reqNetPriceCut = 0;
+				} else {
+					reqNetPriceCut = parseFloat(reqNetPriceCut);
+				}
+
+				if (reqNetPriceRoll === "") {
+					reqNetPriceRoll = 0;
+				} else {
+					reqNetPriceRoll = parseFloat(reqNetPriceRoll);
+				}
+
+			}
+
+			if (editPriceData.BILLING_PRICE__C) {
+				if (editPriceData.BUYING_GROUP_NUMBER__C !== null) {
+
+					reqNetPriceAcc = parseFloat(editPriceData.EditEachPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(editPriceData.EditEachPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
+					reqNetPriceCarton = parseFloat(editPriceData.EditCartonPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(editPriceData.EditCartonPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
+				} else {
+
+					reqNetPriceAcc = parseFloat(editPriceData.EditEachPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(editPriceData.EditEachPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
+					reqNetPriceCarton = parseFloat(editPriceData.EditCartonPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(editPriceData.EditCartonPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+				}
+
+				if (reqNetPriceAcc === "") {
+					reqNetPriceAcc = 0;
+				} else {
+					reqNetPriceAcc = parseFloat(reqNetPriceAcc);
+				}
+				if (reqNetPriceCarton === "") {
+					reqNetPriceCarton = 0;
+				} else {
+					reqNetPriceCarton = parseFloat(reqNetPriceCarton);
+				}
+
 			}
 
 			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
 				pattern: "yyyy-MM-dd"
 			});
 
-			var startDate = "";
-			var endDate = "";
-			if (editPriceData.START_DATE__C !== "" || editPriceData.START_DATE__C !== null) {
-				startDate = dateFormat.format(new Date(editPriceData.START_DATE__C));
+			var startDate = editPriceData.EDIT_START_DATE;
+			var endDate = editPriceData.EDIT_END_DATE;
+
+			var dpkStartdate = dateFormat.format(new Date(this.dpkStartdate));
+			var dpkEnddate = dateFormat.format(new Date(this.dpkEnddate));
+
+			var cplRecordId = new Date().getTime().toString();
+
+			var txtCut1 = txtCut1.getText();
+			var txtRoll1 = txtRoll1.getText();
+			var txtEach11 = txtEach11.getText();
+			var txtCarton11 = txtCarton11.getText();
+
+			that.txtCut1 = that.txtCut1 !== null ? that.txtCut1 : 0;
+			that.txtRoll1 = that.txtRoll1 !== null ? that.txtRoll1 : 0;
+			reqNetPriceCut = reqNetPriceCut !== null ? reqNetPriceCut : 0;
+			reqNetPriceRoll = reqNetPriceRoll !== null ? reqNetPriceRoll : 0;
+			that.txtCarton11 = that.txtCarton11 !== null ? that.txtCarton11 : 0;
+			reqNetPriceCarton = reqNetPriceCarton !== null ? reqNetPriceCarton : 0;
+			that.txtEach11 = that.txtEach11 !== null ? that.txtEach11 : 0;
+			reqNetPriceAcc = reqNetPriceAcc !== null ? reqNetPriceAcc : 0;
+
+			if (this.lmtdPrice === false) {
+
+				if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
+					"Resilient Sheet") {
+					updateUrl = "pricing/Updatecplhardsurface.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecut": that.txtCut1,
+						"Reqbillpriceroll": that.txtRoll1,
+						"Reqnetpricecut": reqNetPriceCut,
+						"Reqnetpriceroll": reqNetPriceRoll
+					};
+				} else if (this.selectedCat === "Carpet Tile" || this.selectedCat === "Tile" || this.selectedCat === "TecWood" || this.selectedCat ===
+					"SolidWood" || this.selectedCat === "RevWood" || this.selectedCat === "Resilient Tile") {
+					updateUrl = "pricing/Updatecplsoftsurface.xsjs";
+
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": that.txtCarton11,
+						"Reqbillpricepallet": that.txtCarton11,
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+
+				} else if (this.selectedCat === "Accessories") {
+					updateUrl = "pricing/Updatecplaccessories.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillprice": that.txtEach11,
+						"Reqnetprice": reqNetPriceAcc
+					};
+				}
 			} else {
-				startDate = "";
-			}
-			
-			if (editPriceData.END_DATE__C !== "" || editPriceData.END_DATE__C !== null) {
-				endDate = dateFormat.format(new Date(editPriceData.END_DATE__C));
-			} else {
-				endDate = "4000-12-31";
+
+				if (this.selectedCat === "Residential Broadloom") {
+					updateUrl = "pricing/InsertLimitedRB.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecut": parseFloat(that.txtCut1),
+						"Reqbillpriceroll": parseFloat(that.txtRoll1),
+						"Reqnetpricecut": reqNetPriceCut,
+						"Reqnetpriceroll": reqNetPriceRoll
+					};
+				} else if (this.selectedCat === "Commercial Broadloom") {
+					updateUrl = "pricing/InsertLimitedCB.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecut": parseFloat(that.txtCut1),
+						"Reqbillpriceroll": parseFloat(that.txtRoll1),
+						"Reqnetpricecut": reqNetPriceCut,
+						"Reqnetpriceroll": reqNetPriceRoll
+					};
+				} else if (this.selectedCat === "Resilient Sheet") {
+					updateUrl = "pricing/InsertLimitedRS.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecut": parseFloat(that.txtCut1),
+						"Reqbillpriceroll": parseFloat(that.txtRoll1),
+						"Reqnetpricecut": reqNetPriceCut,
+						"Reqnetpriceroll": reqNetPriceRoll
+					};
+				} else if (this.selectedCat === "Accessories") {
+					updateUrl = "pricing/InsertLimitedACC.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillprice": parseFloat(that.txtEach11),
+						"Reqnetprice": reqNetPriceAcc
+					};
+				} else if (this.selectedCat === "Carpet Tile") {
+					updateUrl = "pricing/InsertLimitedCT.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": parseFloat(that.txtCarton11),
+						"Reqbillpricepallet": parseFloat(that.txtCarton11),
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+				} else if (this.selectedCat === "Tile") {
+					updateUrl = "pricing/InsertLimitedTile.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": parseFloat(that.txtCarton11),
+						"Reqbillpricepallet": parseFloat(that.txtCarton11),
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+				} else if (this.selectedCat === "TecWood") {
+					updateUrl = "pricing/InsertLimitedTW.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": parseFloat(that.txtCarton11),
+						"Reqbillpricepallet": parseFloat(that.txtCarton11),
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+				} else if (this.selectedCat === "SolidWood") {
+					updateUrl = "pricing/InsertLimitedSW.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": parseFloat(that.txtCarton11),
+						"Reqbillpricepallet": parseFloat(that.txtCarton11),
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+				} else if (this.selectedCat === "RevWood") {
+					updateUrl = "pricing/InsertLimitedRW.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": parseFloat(that.txtCarton11),
+						"Reqbillpricepallet": parseFloat(that.txtCarton11),
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+				} else if (this.selectedCat === "Resilient Tile") {
+					updateUrl = "pricing/InsertLimitedRT.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getValue(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillpricecarton": parseFloat(that.txtCarton11),
+						"Reqbillpricepallet": parseFloat(that.txtCarton11),
+						"Reqnetpricecarton": reqNetPriceCarton,
+						"Reqnetpricepallet": reqNetPriceCarton
+					};
+				}
 			}
 
-			if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
-				"Resilient Sheet") {
-				updateUrl = "pricing/Updatecplhardsurface.xsjs";
-				var cplRecordId = new Date().getTime().toString();
-				payload = {
-					"Accountno": editPriceData.ACCOUNT__C,
-					"Productcategory": this.selectedCat,
-					"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
-					"Whcode": this.selectedWH,
-					"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
-					"Startdate": startDate,
-					"Enddate": endDate,
-					"Cplrecordid": cplRecordId,
-					"Approvalstatus": "1",
-					"Justification": justification,
-					"Promocode": txtPromocode.getValue(),
-					"Modifiedby": this.loggedInUser,
-					"Reqbillpricecut": editPriceData.EditCutPrice.toString(),
-					"Reqbillpriceroll": editPriceData.EditRollPrice.toString(),
-					"Reqnetpricecut": reqNetPriceCut.toString(),
-					"Reqnetpriceroll": reqNetPriceRoll.toString(),
-				};
-			} else if (this.selectedCat === "Carpet Tile" || this.selectedCat === "Tile" || this.selectedCat === "TecWood" || this.selectedCat ===
-				"SolidWood" || this.selectedCat === "RevWood" || this.selectedCat === "Resilient Tile") {
-				updateUrl = "pricing/Updatecplsoftsurface.xsjs";
-				payload = {
-					"Accountno": this.accNo,
-					"Productcategory": this.selectedCat,
-					"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
-					"Whcode": this.selectedWH,
-					"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
-					"Startdate": startDate,
-					"Enddate": endDate,
-					"Cplrecordid": cplRecordId,
-					"Approvalstatus": "1",
-					"Justification": justification,
-					"Promocode": txtPromocode.getValue(),
-					"Modifiedby": this.loggedInUser,
-					"Reqbillpricecarton": editPriceData.EditCutPrice.toString(),
-					"Reqbillpricepallet": editPriceData.EditRollPrice.toString(),
-					"Reqnetpricecarton": reqNetPriceCut.toString(),
-					"Reqnetpricepallet": reqNetPriceRoll.toString(),
-				};
-			} else if (this.selectedCat === "Accessories") {
-				updateUrl = "pricing/Updatecplaccessories.xsjs";
-				payload = {
-					"Accountno": this.accNo,
-					"Productcategory": this.selectedCat,
-					"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
-					"Whcode": this.selectedWH,
-					"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
-					"Startdate": startDate,
-					"Enddate": endDate,
-					"Cplrecordid": cplRecordId,
-					"Approvalstatus": "1",
-					"Justification": justification,
-					"Promocode": txtPromocode.getValue(),
-					"Modifiedby": this.loggedInUser,
-					"Reqbillprice": 0,
-					"Reqnetprice": 0,
-				};
-			}
+			var cmtPayload = {
+				"Cplrecordid": cplRecordId,
+				"Comments": txtComment.getValue()
+			};
+
 			var that = this;
+			sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: updateUrl,
 				contentType: "application/json",
@@ -1880,615 +3214,531 @@ sap.ui.define([
 				data: JSON.stringify(payload),
 				success: function (response) {
 					console.log(response);
-					that.OnCancelJustification();
+					var g = that;
+					if(g.lmtdPrice === true) { // Added by <JAYANT PRAKASH> for <4080> on <01.09.2021>
+					$.ajax({
+						url: "pricing/Updatecplcomment.xsjs",
+						contentType: "application/json",
+						method: "POST",
+						async: false,
+						data: JSON.stringify(cmtPayload),
+						success: function (response) {
+							console.log(response);
+							g.OnCancelJustification();
+							MessageBox.success("Success! Record Inserted Successfully");
+							g.fetchProducts();
+							sap.ui.getCore().busyIndicator.close();
+						},
+						error: function (error) {
+							console.log(error);
+							sap.ui.getCore().busyIndicator.close();
+						}
+					});
+					// Start of changes by <JAYANT PRAKASH> for <4080> on <01.09.2021>
+					} else {
+					$.ajax({
+						url: "pricing/Updatecplcomment.xsjs",
+						contentType: "application/json",
+						method: "POST",
+						async: false,
+						data: JSON.stringify(cmtPayload),
+						success: function (response) {
+							console.log(response);
+							g.OnCancelJustification();
+							g.fetchProducts();
+							sap.ui.getCore().busyIndicator.close();
+						},
+						error: function (error) {
+							console.log(error);
+							sap.ui.getCore().busyIndicator.close();
+						}
+					});	
+					}	//End of changes by <JAYANT PRAKASH> for <4080> on <01.09.2021>
+
 				},
-				error: function (error) {}
+				error: function (error) {
+					console.log(error);
+					sap.ui.getCore().busyIndicator.close();
+				}
 			});
 
 		},
 
-		/*	_bindFilters: function (pViewData, pViewModel) {
-				var brands = [{
-						"key": 0,
-						"brand": ""
-					}],
-					fibers = [{
-						"key": 0,
-						"fiber": ""
-					}],
-					fiberBrands = [{
-						"key": 0,
-						"fiberBrand": ""
-					}],
-					constructions = [{
-						"key": 0,
-						"construction": ""
-					}],
-					weights = [{
-						"key": 0,
-						"weight": ""
-					}],
-					collections = [{
-						"key": 0,
-						"collection": ""
-					}],
-					displayVehicles = [{
-						"key": 0,
-						"vehicle": ""
-					}],
-					categories = [{
-						"key": 0,
-						"category": ""
-					}],
-					density = [{
-						"key": 0,
-						"density": ""
-					}],
-					gauge = [{
-						"key": 0,
-						"gauge": ""
-					}],
-					size = [{
-						"key": 0,
-						"size": ""
-					}],
-					antimicrobial = [{
-						"key": 0,
-						"antimicrobial": ""
-					}],
-					moistureBarriers = [{
-						"key": 0,
-						"moBarrier": ""
-					}],
-					localStock = [{
-						"key": 0,
-						"stock": ""
-					}],
-					segments = [{
-						"key": 0,
-						"segment": ""
-					}],
-					widths = [{
-						"key": 0,
-						"width": ""
-					}],
-					species = [{
-						"key": 0,
-						"Species": ""
-					}],
-					textures = [{
-						"key": 0,
-						"texture": ""
-					}],
-					features = [{
-						"key": 0,
-						"feature": ""
-					}],
-					cores = [{
-						"key": 0,
-						"core": ""
-					}],
-					wearLayer = [{
-						"key": 0,
-						"layer": ""
-					}],
-					installation = [{
-						"key": 0,
-						"installation": ""
-					}],
-					backing = [{
-						"key": 0,
-						"backing": ""
-					}],
-					descriptions = [{
-						"key": 0,
-						"desc": ""
-					}],
-					application = [{
-						"key": 0,
-						"app": ""
-					}],
-					technology = [{
-						"key": 0,
-						"tech": ""
-					}],
-					thickness = [{
-						"key": 0,
-						"thick": ""
-					}];
+		// Start Remove Current Price - 1972
+		onItemRemovePrice: function (oEvent) {
+			var that = this;
+			var selectedRow = oEvent.getSource().getParent().getParent().getParent();
+			var removeData = {
+				"cell1": selectedRow.getAggregation("cells")[1].getText(),
+				"cell2": selectedRow.getAggregation("cells")[2].getText(),
+				"cell3": selectedRow.getAggregation("cells")[3].getText(),
+				"cell4": selectedRow.getAggregation("cells")[4].getText(),
+				"cell5": selectedRow.getAggregation("cells")[5].getText(),
+				"cell6": selectedRow.getAggregation("cells")[6].getText(),
+				"cell7": selectedRow.getAggregation("cells")[7].getText()
+			}
 
-				for (var j = 0; j < pViewData.length; j++) {
-					//Brand	
-					if (pViewData[j].BRAND_CODE__C) {
-						var tempBrand = {
-							"key": j + 1,
-							"brand": pViewData[j].BRAND_CODE__C
-						};
-						var brandAdded = false;
-						for (var s = 0; s < brands.length; s++) {
-							if (brands[s].brand === tempBrand.brand) {
-								brandAdded = true;
+			var pViewModel = this.getView().getModel("pViewModel");
+			var pViewData = pViewModel.getData();
+
+			var tHeader = sap.ui.getCore().getModel("configModel").getProperty("/mHeader");
+
+			var removePriceData = pViewData.filter(function (a) {
+				a[tHeader[1].field.replace('PRODUCT__R.', '')] = typeof (a[tHeader[1].field.replace('PRODUCT__R.', '')]) === "number" ? "$ " + a[
+					tHeader[1].field.replace('PRODUCT__R.', '')].toString() : a[tHeader[1].field.replace('PRODUCT__R.', '')];
+				a[tHeader[2].field.replace('PRODUCT__R.', '')] = typeof (a[tHeader[2].field.replace('PRODUCT__R.', '')]) === "number" ? "$ " + a[
+					tHeader[2].field.replace('PRODUCT__R.', '')].toString() : a[tHeader[2].field.replace('PRODUCT__R.', '')];
+				a[tHeader[3].field.replace('PRODUCT__R.', '')] = typeof (a[tHeader[3].field.replace('PRODUCT__R.', '')]) === "number" ? "$ " + a[
+					tHeader[3].field.replace('PRODUCT__R.', '')].toString() : a[tHeader[3].field.replace('PRODUCT__R.', '')];
+				a[tHeader[4].field.replace('PRODUCT__R.', '')] = typeof (a[tHeader[4].field.replace('PRODUCT__R.', '')]) === "number" ? "$ " + a[
+					tHeader[4].field.replace('PRODUCT__R.', '')].toString() : a[tHeader[4].field.replace('PRODUCT__R.', '')];
+				a[tHeader[5].field.replace('PRODUCT__R.', '')] = typeof (a[tHeader[5].field.replace('PRODUCT__R.', '')]) === "number" ? "$ " + a[
+					tHeader[5].field.replace('PRODUCT__R.', '')].toString() : a[tHeader[5].field.replace('PRODUCT__R.', '')];
+				a[tHeader[6].field.replace('PRODUCT__R.', '')] = typeof (a[tHeader[6].field.replace('PRODUCT__R.', '')]) === "number" ? "$ " + a[
+					tHeader[6].field.replace('PRODUCT__R.', '')].toString() : a[tHeader[6].field.replace('PRODUCT__R.', '')];
+
+				return removeData.cell1 == a[tHeader[0].field.replace('PRODUCT__R.', '')] && removeData.cell2 == a[tHeader[1].field.replace(
+					'PRODUCT__R.', '')] && removeData.cell3 == a[tHeader[2].field.replace('PRODUCT__R.', '')] && removeData.cell4 == a[tHeader[3].field
+					.replace('PRODUCT__R.', '')] && removeData.cell5 == a[tHeader[4].field.replace('PRODUCT__R.', '')] && removeData.cell6 == a[
+					tHeader[5].field.replace('PRODUCT__R.', '')] && removeData.cell7 == a[tHeader[6].field.replace('PRODUCT__R.', '')]
+			});
+
+			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
+				pattern: "yyyy-MM-dd"
+			});
+
+			for (var i = 0; i < pViewData.length; i++) {
+				if (pViewData[i].CPL_PRICE_ID__C !== null) {
+					if (pViewData[i].CPL_PRICE_ID__C === removePriceData[0].CPL_PRICE_ID__C) {
+						if (pViewData[i].EDIT_START_DATE != null) {
+							if (pViewData[i].EDIT_START_DATE.split("(").length > 1) {
+								var startdate = pViewData[i].EDIT_START_DATE.split("(")[1].split(")")[0];
+								pViewData[i].EDIT_START_DATE = dateFormat.format(new Date(parseInt(startdate)));
+								removePriceData[0].EDIT_START_DATE = pViewData[i].EDIT_START_DATE;
 							}
 						}
-						if (brandAdded === false) {
-							brands.push(tempBrand);
-						}
-					}
-
-					//Fiber
-					if (pViewData[j].FIBER_TYPE__C) {
-						var tempFiber = {
-							"key": j + 1,
-							"fiber": pViewData[j].FIBER_TYPE__C
-						};
-						var fiberAdded = false;
-						for (var s = 0; s < fibers.length; s++) {
-							if (fibers[s].fiber === tempFiber.fiber) {
-								fiberAdded = true;
+						if (pViewData[i].EDIT_END_DATE != null) {
+							if (pViewData[i].EDIT_END_DATE.split("(").length > 1) {
+								var enddate = pViewData[i].EDIT_END_DATE.split("(")[1].split(")")[0];
+								pViewData[i].EDIT_END_DATE = dateFormat.format(new Date(parseInt(enddate)));
+								removePriceData[0].EDIT_END_DATE = pViewData[i].EDIT_END_DATE;
 							}
-						}
-						if (fiberAdded === false) {
-							fibers.push(tempFiber);
-						}
-					}
-
-					//FiberBrand
-					if (pViewData[j].FIBER_BRAND_CODE__C) {
-						var tempFiberBrand = {
-							"key": j + 1,
-							"fiberBrand": pViewData[j].FIBER_BRAND_CODE__C
-						};
-						var fiberBrandAdded = false;
-						for (var s = 0; s < fiberBrands.length; s++) {
-							if (fiberBrands[s].fiberBrand === tempFiberBrand.fiberBrand) {
-								fiberBrandAdded = true;
-							}
-						}
-						if (fiberBrandAdded === false) {
-							fiberBrands.push(tempFiberBrand);
-						}
-					}
-
-					//Construction
-					if (pViewData[j].FINISH__C) {
-						var tempConstruction = {
-							"key": j + 1,
-							"construction": pViewData[j].FINISH__C
-						};
-						var constructionAdded = false;
-						for (var s = 0; s < constructions.length; s++) {
-							if (constructions[s].construction === tempConstruction.construction) {
-								constructionAdded = true;
-							}
-						}
-						if (constructionAdded === false) {
-							constructions.push(tempConstruction);
-						}
-					}
-
-					//Weight
-					if (pViewData[j].FACE_WEIGH__C) {
-						var tempWeight = {
-							"key": j + 1,
-							"weight": pViewData[j].FACE_WEIGH__C
-						};
-						var weightAdded = false;
-						for (var s = 0; s < weights.length; s++) {
-							if (weights[s].weight === tempWeight.weight) {
-								weightAdded = true;
-							}
-						}
-						if (weightAdded === false) {
-							weights.push(tempWeight);
-						}
-					}
-
-					//Collection
-					if (pViewData[j].FACE_WEIGH__C) {
-						var tempCollection = {
-							"key": j + 1,
-							"collection": pViewData[j].FACE_WEIGH__C // Check Value
-						};
-						var collectionAdded = false;
-						for (var s = 0; s < collections.length; s++) {
-							if (collections[s].collection === tempCollection.collection) {
-								collectionAdded = true;
-							}
-						}
-						if (collectionAdded === false) {
-							collections.push(tempCollection);
-						}
-					}
-
-					//Display Vehicle
-					if (pViewData[j].DISPLAY__C) {
-						var tempVehicle = {
-							"key": j + 1,
-							"vehicle": pViewData[j].DISPLAY__C
-						};
-						var vehicleAdded = false;
-						for (var s = 0; s < displayVehicles.length; s++) {
-							if (displayVehicles[s].vehicle === tempVehicle.vehicle) {
-								vehicleAdded = true;
-							}
-						}
-						if (vehicleAdded === false) {
-							displayVehicles.push(tempVehicle);
-						}
-					}
-
-					//Category
-					if (pViewData[j].SUB_CATEGORY__C) {
-						var tempCategory = {
-							"key": j + 1,
-							"category": pViewData[j].SUB_CATEGORY__C
-						};
-						var categoryAdded = false;
-						for (var s = 0; s < categories.length; s++) {
-							if (categories[s].category === tempCategory.category) {
-								categoryAdded = true;
-							}
-						}
-						if (categoryAdded === false) {
-							categories.push(tempCategory);
-						}
-					}
-
-					//Density
-					if (pViewData[j].RESIDENTIAL_DENSITY__C) {
-						var tempDensity = {
-							"key": j + 1,
-							"density": pViewData[j].RESIDENTIAL_DENSITY__C
-						};
-						var densityAdded = false;
-						for (var s = 0; s < density.length; s++) {
-							if (density[s].density === tempDensity.density) {
-								densityAdded = true;
-							}
-						}
-						if (densityAdded === false) {
-							density.push(tempDensity);
-						}
-					}
-
-					//Gauge
-					if (pViewData[j].SIZE__C) {
-						var tempGauge = {
-							"key": j + 1,
-							"gauge": pViewData[j].SIZE__C // Check Value
-						};
-						var gaugeAdded = false;
-						for (var s = 0; s < gauge.length; s++) {
-							if (gauge[s].gauge === tempGauge.gauge) {
-								gaugeAdded = true;
-							}
-						}
-						if (gaugeAdded === false) {
-							gauge.push(tempGauge);
-						}
-					}
-
-					//Size
-					if (pViewData[j].SIZE__C) {
-						var tempSize = {
-							"key": j + 1,
-							"size": pViewData[j].SIZE__C
-						};
-						var sizeAdded = false;
-						for (var s = 0; s < size.length; s++) {
-							if (size[s].size === tempSize.size) {
-								sizeAdded = true;
-							}
-						}
-						if (sizeAdded === false) {
-							size.push(tempSize);
-						}
-					}
-
-					//Antimicrobial
-					if (pViewData[j].ANTIMICROBIAL__C) {
-						var tempAntimicrobial = {
-							"key": j + 1,
-							"antimicrobial": pViewData[j].ANTIMICROBIAL__C
-						};
-						var antimicrobialAdded = false;
-						for (var s = 0; s < antimicrobial.length; s++) {
-							if (antimicrobial[s].antimicrobial === tempAntimicrobial.antimicrobial) {
-								antimicrobialAdded = true;
-							}
-						}
-						if (antimicrobialAdded === false) {
-							antimicrobial.push(tempAntimicrobial);
-						}
-					}
-
-					//Moisture Barriers
-					if (pViewData[j].MOISTURE_BARRIER__C) {
-						var tempMoBarrier = {
-							"key": j + 1,
-							"moBarrier": pViewData[j].MOISTURE_BARRIER__C
-						};
-						var moBarrierAdded = false;
-						for (var s = 0; s < moistureBarriers.length; s++) {
-							if (moistureBarriers[s].moBarrier === tempMoBarrier.moBarrier) {
-								moBarrierAdded = true;
-							}
-						}
-						if (moBarrierAdded === false) {
-							moistureBarriers.push(tempMoBarrier);
-						}
-					}
-
-					//Local Stock
-					if (pViewData[j].LOCAL_STOCK__C) {
-						var tempLocalStock = {
-							"key": j + 1,
-							"stock": pViewData[j].LOCAL_STOCK__C
-						};
-						var localStockAdded = false;
-						for (var s = 0; s < localStock.length; s++) {
-							if (localStock[s].stock === tempLocalStock.stock) {
-								localStockAdded = true;
-							}
-						}
-						if (localStockAdded === false) {
-							localStock.push(tempLocalStock);
-						}
-					}
-
-					//Segments
-					if (pViewData[j].SEGMENT__C) {
-						var tempSegment = {
-							"key": j + 1,
-							"segment": pViewData[j].SEGMENT__C
-						};
-						var segmentAdded = false;
-						for (var s = 0; s < segments.length; s++) {
-							if (segments[s].segment === tempSegment.segment) {
-								segmentAdded = true;
-							}
-						}
-						if (segmentAdded === false) {
-							segments.push(tempSegment);
-						}
-					}
-
-					//Width
-					if (pViewData[j].SIZE_DESCRIPTION__C) {
-						var tempWidth = {
-							"key": j + 1,
-							"width": pViewData[j].SIZE_DESCRIPTION__C //Check Value
-						};
-						var widthAdded = false;
-						for (var s = 0; s < widths.length; s++) {
-							if (widths[s].width === tempWidth.width) {
-								widthAdded = true;
-							}
-						}
-						if (widthAdded === false) {
-							widths.push(tempWidth);
-						}
-					}
-
-					//Species
-					if (pViewData[j].SPECIES__C) {
-						var tempSpecie = {
-							"key": j + 1,
-							"Species": pViewData[j].SPECIES__C
-						};
-						var speciesAdded = false;
-						for (var s = 0; s < species.length; s++) {
-							if (species[s].Species === tempSpecie.Species) {
-								speciesAdded = true;
-							}
-						}
-						if (speciesAdded === false) {
-							species.push(tempSpecie);
-						}
-					}
-
-					//Textures
-					if (pViewData[j].TEXTURE__C) {
-						var tempTexture = {
-							"key": j + 1,
-							"texture": pViewData[j].TEXTURE__C
-						};
-						var textureAdded = false;
-						for (var s = 0; s < textures.length; s++) {
-							if (textures[s].texture === tempTexture.texture) {
-								textureAdded = true;
-							}
-						}
-						if (textureAdded === false) {
-							textures.push(tempTexture);
-						}
-					}
-
-					//Feature
-					if (pViewData[j].FEATURES__C) {
-						var tempFeatures = {
-							"key": j + 1,
-							"feature": pViewData[j].FEATURES__C
-						};
-						var featureAdded = false;
-						for (var s = 0; s < features.length; s++) {
-							if (features[s].feature === tempFeatures.feature) {
-								featureAdded = true;
-							}
-						}
-						if (featureAdded === false) {
-							features.push(tempFeatures);
-						}
-					}
-
-					//Core
-					if (pViewData[j].CORE_BODY__C) {
-						var tempCores = {
-							"key": j + 1,
-							"core": pViewData[j].CORE_BODY__C
-						};
-						var coreAdded = false;
-						for (var s = 0; s < cores.length; s++) {
-							if (cores[s].core === tempCores.core) {
-								coreAdded = true;
-							}
-						}
-						if (coreAdded === false) {
-							cores.push(tempCores);
-						}
-					}
-
-					//Wear Layer
-					if (pViewData[j].WEAR_LAYER__C) {
-						var tempWearLayer = {
-							"key": j + 1,
-							"layer": pViewData[j].WEAR_LAYER__C
-						};
-						var layerAdded = false;
-						for (var s = 0; s < wearLayer.length; s++) {
-							if (wearLayer[s].layer === tempWearLayer.layer) {
-								layerAdded = true;
-							}
-						}
-						if (layerAdded === false) {
-							wearLayer.push(tempWearLayer);
-						}
-					}
-
-					//Installation
-					if (pViewData[j].INSTALLATION_METHOD__C) {
-						var tempInstallation = {
-							"key": j + 1,
-							"installation": pViewData[j].INSTALLATION_METHOD__C
-						};
-						var installationAdded = false;
-						for (var s = 0; s < installation.length; s++) {
-							if (installation[s].installation === tempInstallation.installation) {
-								installationAdded = true;
-							}
-						}
-						if (installationAdded === false) {
-							installation.push(tempInstallation);
-						}
-					}
-
-					//Backing
-					if (pViewData[j].BACKING__C) {
-						var tempBacking = {
-							"key": j + 1,
-							"backing": pViewData[j].BACKING__C
-						};
-						var backingAdded = false;
-						for (var s = 0; s < backing.length; s++) {
-							if (backing[s].backing === tempBacking.backing) {
-								backingAdded = true;
-							}
-						}
-						if (backingAdded === false) {
-							backing.push(tempBacking);
-						}
-					}
-
-					//Description
-					if (pViewData[j].BACKING_DESCRIPTION__C) {
-						var tempDesc = {
-							"key": j + 1,
-							"desc": pViewData[j].BACKING_DESCRIPTION__C
-						};
-						var descAdded = false;
-						for (var s = 0; s < descriptions.length; s++) {
-							if (descriptions[s].desc === tempDesc.desc) {
-								descAdded = true;
-							}
-						}
-						if (descAdded === false) {
-							descriptions.push(tempDesc);
-						}
-					}
-
-					//Application
-					if (pViewData[j].BACKING_DESCRIPTION__C) {
-						var tempApp = {
-							"key": j + 1,
-							"app": pViewData[j].BACKING_DESCRIPTION__C // check value
-						};
-						var appAdded = false;
-						for (var s = 0; s < application.length; s++) {
-							if (application[s].app === tempApp.app) {
-								appAdded = true;
-							}
-						}
-						if (appAdded === false) {
-							application.push(tempApp);
-						}
-					}
-
-					//Technology
-					if (pViewData[j].TECHNOLOGY_APPLICATION__C) {
-						var tempTech = {
-							"key": j + 1,
-							"tech": pViewData[j].TECHNOLOGY_APPLICATION__C
-						};
-						var techAdded = false;
-						for (var s = 0; s < technology.length; s++) {
-							if (technology[s].tech === tempTech.tech) {
-								techAdded = true;
-							}
-						}
-						if (techAdded === false) {
-							technology.push(tempTech);
-						}
-					}
-
-					//Thickness
-					if (pViewData[j].THICKNESS__C) {
-						var tempThick = {
-							"key": j + 1,
-							"thick": pViewData[j].THICKNESS__C
-						};
-						var thickAdded = false;
-						for (var s = 0; s < thickness.length; s++) {
-							if (thickness[s].thick === tempThick.thick) {
-								thickAdded = true;
-							}
-						}
-						if (thickAdded === false) {
-							thickness.push(tempThick);
 						}
 					}
 				}
+			}
 
-				pViewModel.setProperty("/brands", brands);
-				pViewModel.setProperty("/fibers", fibers);
-				pViewModel.setProperty("/fiberBrands", fiberBrands);
-				pViewModel.setProperty("/constructions", constructions);
-				pViewModel.setProperty("/weights", weights);
-				pViewModel.setProperty("/collections", collections);
-				pViewModel.setProperty("/displayVehicles", displayVehicles);
-				pViewModel.setProperty("/categories", categories);
-				pViewModel.setProperty("/density", density);
-				pViewModel.setProperty("/gauge", gauge);
-				pViewModel.setProperty("/size", size);
-				pViewModel.setProperty("/antimicrobial", antimicrobial);
-				pViewModel.setProperty("/moistureBarriers", moistureBarriers);
-				pViewModel.setProperty("/localStock", localStock);
-				pViewModel.setProperty("/segments", segments);
-				pViewModel.setProperty("/widths", widths);
-				pViewModel.setProperty("/species", species);
-				pViewModel.setProperty("/textures", textures);
-				pViewModel.setProperty("/features", features);
-				pViewModel.setProperty("/cores", cores);
-				pViewModel.setProperty("/wearLayer", wearLayer);
-				pViewModel.setProperty("/installation", installation);
-				pViewModel.setProperty("/backing", backing);
-				pViewModel.setProperty("/descriptions", descriptions);
-				pViewModel.setProperty("/application", application);
-				pViewModel.setProperty("/technology", technology);
-				pViewModel.setProperty("/thickness", thickness);
+			if (removePriceData[0].CPL_PRICE_ID__C.length === 13) {
+				removePriceData[0].isLimitedPrice = true;
+			} else {
+				removePriceData[0].isLimitedPrice = false;
+			}
 
-			},*/
+			var removeModel = new JSONModel(removePriceData);
+			this.getView().setModel(removeModel, "removeModel");
+			
+			//Start of changes by <JAYANT PRAKASH> for <4059> on <01.06.2021>
+			//MessageBox.error("Are you Sure?", {
+			MessageBox.error("Are you Sure - Remove the record from submission ?", { 
+			//Endof changes by <JAYANT PRAKASH> for <4059> on <01.06.2021>
+				title: "Remove Price",
+				actions: [MessageBox.Action.YES, MessageBox.Action.NO],
+				emphasizedAction: "YES",
+				onClose: function (sAction) {
+					//sap.m.MessageToast.show("Action selected: " + );
+					if (sAction === "YES") {
+						if (removeModel.getData().length > 0) {
+							if (removeModel.getData()[0].APPROVAL_STATUS__C === "4" || removeModel.getData()[0].APPROVAL_STATUS__C === "1") {
+								that.onRemoveDraftPrice(removeModel.getData()[0].isLimitedPrice);
+							} else {
+								that.onRemoveCurrentPrice();
+							}
+						}
 
-		onReset: function (oEvent) {
+					} else {
+						that.fetchProducts();
+					}
+				}
+			});
+		},
+
+		onRemoveCurrentPrice: function () {
+
+			var that = this;
+			var removePriceData = this.getView().getModel("removeModel").getData();
+			var removeUrl = "pricing/RemoveCurrentPrice.xsjs";
+			var cplRecordId = new Date().getTime().toString();
+			var startDate = removePriceData[0].EDIT_START_DATE;
+			var endDate = removePriceData[0].EDIT_END_DATE;
+
+			function removeCall() {
+				var payload = {
+					"Accountno": removePriceData[0].ACCOUNT__C,
+					"Productuniquekey": removePriceData[0].PRODUCT_UNIQUE_KEY__C,
+					"Whcode": that.selectedWH,
+					"Cplpriceid": removePriceData[0].CPL_PRICE_ID__C,
+					"Startdate": startDate,
+					"Enddate": endDate,
+					"Productcategory": that.selectedCat,
+					"Cplrecordid": cplRecordId,
+					"Approvalstatus": "4",
+					"Modifiedby": that.loggedInUser,
+				};
+				var g = that;
+				sap.ui.getCore().busyIndicator.open();
+				$.ajax({
+					url: removeUrl,
+					contentType: "application/json",
+					method: "POST",
+					async: false,
+					data: JSON.stringify(payload),
+					success: function (response) {
+						console.log(response);
+						g.fetchProducts();
+						sap.ui.getCore().busyIndicator.close();
+					},
+					error: function (error) {
+						console.log(error);
+						sap.ui.getCore().busyIndicator.close();
+					}
+				});
+			}
+
+			if (endDate !== "4000-12-31") {
+				var std = new Date(startDate);
+				var today = new Date();
+				if (std > today) {
+					if (removePriceData[0].PRICE_INCREASE_FLAG__C === "X") {
+						MessageBox.error("Criteria is not matched");
+						return;
+					} else {
+						removeCall();
+					}
+				} else {
+					MessageBox.error("Criteria is not matched");
+					return;
+				}
+			} else {
+				removeCall();
+			}
+		},
+
+		onRemoveDraftPrice: function (isLimitedPrice) {
+			var that = this;
+			var removePriceData = this.getView().getModel("removeModel").getData();
+			var payload;
+			var removeUrl;
+			var cplRecordId = new Date().getTime().toString();
+			var startDate = removePriceData[0].EDIT_START_DATE;
+			var endDate = removePriceData[0].EDIT_END_DATE;
+			if (isLimitedPrice === true) {
+				removeUrl = "pricing/Removelimitedprice.xsjs";
+				payload = {
+					"Accountno": removePriceData[0].ACCOUNT__C,
+					"Cplpriceid": removePriceData[0].CPL_PRICE_ID__C,
+					"Enddate": endDate,
+					"Productcategory": this.selectedCat,
+					"Productuniquekey": removePriceData[0].PRODUCT_UNIQUE_KEY__C,
+					"Startdate": startDate,
+					"Whcode": this.selectedWH
+				};
+				sap.ui.getCore().busyIndicator.open();
+				$.ajax({
+					url: removeUrl,
+					contentType: "application/json",
+					method: "POST",
+					async: false,
+					data: JSON.stringify(payload),
+					success: function (response) {
+						console.log(response);
+						that.fetchProducts();
+						MessageBox.success("Success! Record is removed from Submission");
+						sap.ui.getCore().busyIndicator.close();
+
+					},
+					error: function (error) {
+						console.log(error);
+						sap.ui.getCore().busyIndicator.close();
+					}
+				});
+			} else {
+				removeUrl = "pricing/Removedraftprice.xsjs";
+				if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
+					"Resilient Sheet") {
+					payload = {
+						"Accountno": removePriceData[0].ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": removePriceData[0].PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": removePriceData[0].CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": "",
+						"Approvalstatus": "",
+						"Justification": "",
+						"Promocode": "",
+						"Modifiedby": "",
+						"Reqbillpricecut": 0,
+						"Reqbillpriceroll": 0,
+						"Reqnetpricecut": 0,
+						"Reqnetpriceroll": 0
+					};
+				} else if (this.selectedCat === "Carpet Tile" || this.selectedCat === "Tile" || this.selectedCat === "TecWood" || this.selectedCat ===
+					"SolidWood" || this.selectedCat === "RevWood" || this.selectedCat === "Resilient Tile") {
+					payload = {
+						"Accountno": removePriceData[0].ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": removePriceData[0].PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": removePriceData[0].CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": "",
+						"Approvalstatus": "",
+						"Justification": "",
+						"Promocode": "",
+						"Modifiedby": "",
+						"Reqbillpricecarton": 0,
+						"Reqbillpricepallet": 0,
+						"Reqnetpricecarton": 0,
+						"Reqnetpricepallet": 0
+					};
+				} else if (this.selectedCat === "Accessories") {
+					payload = {
+						"Accountno": removePriceData[0].ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": removePriceData[0].PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": removePriceData[0].CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": "",
+						"Approvalstatus": "",
+						"Justification": "",
+						"Promocode": "",
+						"Modifiedby": "",
+						"Reqbillprice": 0,
+						"Reqnetprice": 0
+					};
+				}
+				sap.ui.getCore().busyIndicator.open();
+				$.ajax({
+					url: removeUrl,
+					contentType: "application/json",
+					method: "POST",
+					async: false,
+					data: JSON.stringify(payload),
+					success: function (response) {
+						console.log(response);
+						that.fetchProducts();
+						MessageBox.success("Success! Record is removed from Submission");
+						sap.ui.getCore().busyIndicator.close();
+					},
+					error: function (error) {
+						console.log(error);
+						sap.ui.getCore().busyIndicator.close();
+					}
+				});
+			}
+		},
+		//End of  Remove Current Price - 1972
+
+		//Start of Edit Limited Price
+		onItemEditLimited: function (oEvent) {
+			var selectedRow = oEvent.getSource().getParent().getParent().getParent();
+			var selectedRow = oEvent.getSource().getParent().getParent().getParent();
+			var editLimitedData = {
+				"cell1": selectedRow.getAggregation("cells")[1].getText(),
+				"cell2": selectedRow.getAggregation("cells")[2].getText(),
+				"cell3": selectedRow.getAggregation("cells")[3].getText(),
+				"cell4": selectedRow.getAggregation("cells")[4].getText(),
+				"cell5": selectedRow.getAggregation("cells")[5].getText(),
+				"cell6": selectedRow.getAggregation("cells")[6].getText(),
+				"cell7": selectedRow.getAggregation("cells")[7].getText()
+			}
+			this.editLimitedData = editLimitedData;
+
+			var pViewModel = this.getView().getModel("pViewModel");
+			var pViewData = pViewModel.getData();
+
+			var that = this;
+			this.isLimitedTimeRecord = pViewData.filter(function (a) {
+				return a.PRODUCT_STYLE_NUMBER__C === that.editLimitedData.cell1 && a.ISLIMITEDPRICERECORD === true;
+			});
+
+			that.openDialogLimitedPrice(editLimitedData);
+		},
+
+		openDialogLimitedPrice: function (editLimitedData) {
+			if (!this._oDialogLimitedPrice) {
+				this._oDialogLimitedPrice = sap.ui.xmlfragment("cf.cpl.fragments.EditLimitedPrice", this);
+				this.getView().addDependent(this._oDialogLimitedPrice);
+			}
+			this._oDialogLimitedPrice.setModel();
+			this._oDialogLimitedPrice.open();
+			// Previous error message remove
+			var errormsg = sap.ui.getCore().byId("errormsg");
+			errormsg.setVisible(false);
+			errormsg.setText("");
+
+			sap.ui.getCore().byId("sbDays").setSelectedItem("-1");
+			var today = new Date();
+			var tomorrow = new Date(today);
+			tomorrow.setDate(tomorrow.getDate() + 1);
+			sap.ui.getCore().byId("dpkStartdate").setDateValue(tomorrow);
+			sap.ui.getCore().byId("dpkStartdate").setValue(tomorrow.toLocaleString('default', {
+				day: "numeric",
+				month: 'long',
+				year: "numeric"
+			}));
+
+			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
+				pattern: "dd MMMM yyyy"
+			});
+			//Start of changes by <AYUGAHLO> for <4058> on <01.08.2021>
+			//sap.ui.getCore().byId("hiddenEnddate").setValue(today.toLocaleString('default', {
+			sap.ui.getCore().byId("hiddenEnddate").setValue(tomorrow.toLocaleString('default', {
+			//End of changes by <AYUGAHLO> for <4058> on <01.08.2021>	
+				day: "numeric",
+				month: 'long',
+				year: "numeric"
+			}));
+		},
+
+		OnCancelLimitedPrice: function () {
+				var dpkEnddate = sap.ui.getCore().byId("dpkEnddate").setValue("");
+			this._oDialogLimitedPrice.close();
+			//	this.fetchProducts();
+		},
+
+		afterCloseLimitedPrice: function () {
+			if (this._oDialogLimitedPrice) {
+				this._oDialogLimitedPrice.destroy();
+				this._oDialogLimitedPrice = null;
+			}
+		},
+
+		onSaveDate: function () {
+			var that = this;
+			var dpkStartdate = sap.ui.getCore().byId("dpkStartdate");
+			var dpkEnddate = sap.ui.getCore().byId("dpkEnddate");
+			that.EndDate = dpkEnddate.getValue();
+			var errormsg = sap.ui.getCore().byId("errormsg");
+
+			var currDate = new Date();
+			currDate.setFullYear(currDate.getFullYear() + 1);
+
+			if (dpkStartdate.getValue() === "") {
+				dpkStartdate.setValueState("Error");
+				return false;
+			} else {
+				dpkStartdate.setValueState("None");
+			}
+			if (dpkEnddate.getValue() === "") {
+				dpkEnddate.setValueState("Error");
+				return false;
+			} else {
+				dpkEnddate.setValueState("None");
+			}
+
+			if (new Date(dpkStartdate.getValue()) < new Date()) {
+				errormsg.setVisible(true);
+				errormsg.setText("Start date should be greater then today");
+				return false;
+			} else if (new Date(dpkEnddate.getValue()) < new Date(dpkStartdate.getValue())) {
+				errormsg.setVisible(true);
+				errormsg.setText("End date should not be less then Start date");
+				return false;
+			} else if (new Date(dpkEnddate.getValue()) > currDate) {
+				errormsg.setVisible(true);
+				errormsg.setText("End date should not be more than 1 year");
+				return false;
+			} else {
+				errormsg.setVisible(false);
+				errormsg.setText("");
+			}
+
+			//Start of  check created limited time price record exist or not 
+			var startDate = new Date(dpkStartdate.getValue());
+			var endDate = new Date(dpkEnddate.getValue());
+
+			if (that.isLimitedTimeRecord.length > 0) {
+				for (var i = 0; i < that.isLimitedTimeRecord.length; i++) {
+					var sDate = new Date(that.isLimitedTimeRecord[i].START_DATE__C);
+					var eDate = new Date(that.isLimitedTimeRecord[i].END_DATE__C);
+
+					if (startDate >= sDate && startDate <= eDate) {
+						MessageBox.information("Limited Time Price record is already created");
+						return false;
+					} else if (endDate >= sDate && endDate <= eDate) {
+						MessageBox.information("Limited Time Price record is already created");
+						return false;
+					} else if ((startDate <= sDate && endDate <= eDate) && endDate > sDate) {
+						MessageBox.information("Limited Time Price record is already created");
+						return false;
+					} else if (startDate <= sDate && endDate >= eDate) {
+						MessageBox.information("Limited Time Price record is already created");
+						return false;
+					}
+				}
+			}
+			//End of  check created limited time price record exist or not 
+
+			// Temp - SP
+			that.lmtdPrice = true;
+			that.dpkStartdate = dpkStartdate.getValue();
+			that.dpkEnddate = dpkEnddate.getValue();
+
+			this._oDialogLimitedPrice.close();
+			that.afterCloseLimitedPrice();
+			that.openDialogPgSurface(this.editLimitedData);
+			this.showbackbtn("1");
+		},
+
+		onChangeDays: function (oEvent) {
+
+			var btnKey = parseInt(oEvent.getParameters().item.getKey());
+
+			var dpkStartdate = sap.ui.getCore().byId("dpkStartdate");
+			var dpkEnddate = sap.ui.getCore().byId("dpkEnddate");
+
+			var hiddenEnddate = sap.ui.getCore().byId("hiddenEnddate");
+			var newEnddate = new Date(hiddenEnddate.getValue());
+			if (btnKey === 365) {
+				newEnddate = new Date("12-31-" + new Date().getFullYear());
+			} else {
+				newEnddate.setDate(newEnddate.getDate() + btnKey);
+			}
+
+			dpkEnddate.setValue(newEnddate.toLocaleString('default', {
+				day: "numeric",
+				month: 'long',
+				year: "numeric"
+			}));
+
+		},
+
+		showbackbtn: function (val) {
+			// Back button show logic
+			var btnBack = sap.ui.getCore().byId("btnBack");
+			if (val === "0") {
+				btnBack.setVisible(false);
+			} else {
+				btnBack.setVisible(true);
+			}
+		},
+
+		OnBackLimitedPrice: function (oEvent) {
+			var that = this;
+			this._oDialogPGsurface.close();
+			that.afterClosePGSurface();
+			that.openDialogLimitedPrice();
+			var dpkEnddate = sap.ui.getCore().byId("dpkEnddate").setValue(this.EndDate);
+		},
+
+		//End of Edit Limited Price
+
+		/*onReset: function (oEvent) {
 			this.getView().byId("wh").setSelectedKey("");
 			this.getView().byId("wh2").setSelectedKey("");
 			this.getView().byId("prodCat").setSelectedKey("");
@@ -2501,13 +3751,11 @@ sap.ui.define([
 			var oModel = new JSONModel(this.warehouses);
 			this.byId("wh").setModel(oModel, "warehouses");
 			this.byId("wh2").setModel(oModel, "warehouses");
-			var localData = this.proCat;
+			var localData = this.productCategory();
 			var lModel = new JSONModel(localData);
 			this.getView().setModel(lModel, "local");
 			this.getView().byId("prodCat").setModel(lModel, "local");
 			this.getView().byId("prodCat2").setModel(lModel, "local");
-			// var scData = this.getView().getModel("brandModel").getProperty("/allChannel");
-			// var oModel = new JSONModel(scData);
 			this.getView().getModel("brandModel").setProperty("/allChannel", this.allSalesChnl);
 			var oTable = this.getView().byId("list");
 			oTable.removeAllItems();
@@ -2525,11 +3773,8 @@ sap.ui.define([
 			}
 			this.getView().byId("sortButton").setEnabled(false);
 			this.getView().byId("sortButton2").setEnabled(false);
-		},
+		},*/
 
-		fetchColNProd: function () {
-
-		},
 		/* =========================================================== */
 		/* event handlers                                              */
 		/* =========================================================== */
@@ -2556,40 +3801,6 @@ sap.ui.define([
 				return;
 			}
 
-			// this.globalCols = this.gridmeta.filter((a) => (a.PRIMARY_DISPLAY_ORDER__C == "1") && (a.IS_PRIMARY_DISPLAY__C == "X")).sort(this.sortGridMeta);
-
-			/*this.globalCols = this.gridmeta.filter((a) => (a.FIELD_LABEL__C == "Mstr #" || a.FIELD_LABEL__C ==
-									"Master Style" || a.FIELD_LABEL__C == "Sell #" || a.FIELD_LABEL__C == "Selling Style" || a.FIELD_LABEL__C == "Brand") && (a.IS_PRIMARY_DISPLAY__C ==
-									"X")).sort(this.sortGridMeta);
-			
-								var filters = [];
-								for (var i = 0; i < this.globalCols.length; i++) {
-									var tempF = {
-										"key": i + 1,
-										"field": this.globalCols[i].FIELD_API_NAME__C.toUpperCase()
-									};
-									var fAdded = "false";
-									for (var j = 0; j < filters.length; j++) {
-										if (filters[j].field === tempF.field) {
-											fAdded = "true";
-										}
-									}
-									if (fAdded === "false") {
-										filters.push(tempF);
-									}
-								}
-
-								for (var k = 0; k < filters.length; k++) {
-									if (filters[k].field === 'PRODUCT__R.NAME') {
-										filters[k].field = 'PRODUCT__R.PRODUCT_NAME__C';
-									}
-								}
-
-								var header = sap.ui.getCore().getModel("configModel").getProperty("/mHeader");
-								for (var j = 0; j < filters.length; j++) {
-									filters[j].field = filters[j].field.includes("PRODUCT__R.") ? filters[j].field.replace("PRODUCT__R.", "") : filters[j].field;
-								}*/
-
 			var that = this;
 			var pViewModel = new JSONModel();
 			var sQuery = oEvent.getParameter("query");
@@ -2599,49 +3810,6 @@ sap.ui.define([
 			var oTable = this.getView().byId("list");
 			var oTable2 = this.getView().byId("list2");
 
-			/*var urlFilter = "";
-			for (var i = 0; i < filters.length; i++) {
-				if (i === 0) {
-					urlFilter = urlFilter + filters[i].field.toUpperCase() + " eq '" + sQuery + "'";
-				} else {
-					urlFilter = urlFilter + " or " + filters[i].field.toUpperCase() + " eq '" + sQuery + "'";
-				}
-			}*/
-
-			/*var urlFilter = "PRODUCT_STYLE_NUMBER_UPPER__C eq '" + sQuery + "' or PRODUCT_NAME_UPPER__C eq '" + sQuery +
-				"' or MASTER_STYLE_NAME_UPPER__C eq '" + sQuery + "' or MASTER_STYLE_NUM_UPPER__C eq '" + sQuery + "' or BRAND_CODE_UPPER__C eq '" +
-				sQuery + "'";
-				
-			this.globalSearchField = urlFilter;
-
-			var viewName = "";
-
-			if (this.selectedCat === "Commercial Broadloom") {
-				viewName = "CPLCommercialBroadloomView";
-			} else if (this.selectedCat === "Accessories") {
-				viewName = "CPLAccessoriesView";
-			} else if (this.selectedCat === "Carpet Tile") {
-				viewName = "CPLCarpetTileView";
-			} else if (this.selectedCat === "Cushion") {
-				viewName = "";
-			} else if (this.selectedCat === "Residential Broadloom") {
-				viewName = "CPLResidentialBroadloomView";
-			} else if (this.selectedCat === "Resilient Tile") {
-				viewName = "CPLResilientTileView";
-			} else if (this.selectedCat === "Resilient Sheet") {
-				viewName = "CPLResilientSheetView";
-			} else if (this.selectedCat === "RevWood") {
-				viewName = "CPLRevWoodView";
-			} else if (this.selectedCat === "SolidWood") {
-				viewName = "CPLSolidWoodView";
-			} else if (this.selectedCat === "TecWood") {
-				viewName = "CPLTecWoodView";
-			} else if (this.selectedCat === "Tile") {
-				viewName = "CPLTileView";
-			} else {
-				MessageBox.error("Please select valid product category and try again");
-			}
-			var url = "pricing/PriceGrid.xsodata/" + viewName + "?$filter=" + urlFilter + "&$format=json"; */
 			if (this.accNo !== "" && this.accNo !== undefined) {
 				var url = "pricing/GBSCPLview.xsjs?globalsearchKey=" + sQuery + "&Productcategory=" + this.selectedCat + "&accountNo1=" + this.accNo +
 					"&accountNo2=NA&$format=json";
@@ -2649,6 +3817,7 @@ sap.ui.define([
 				var url = "pricing/GBSCPLview.xsjs?globalsearchKey=" + sQuery + "&Productcategory=" + this.selectedCat +
 					"&accountNo1=NA&accountNo2=NA&$format=json";
 			}
+			sap.ui.getCore().busyIndicator.open();
 			if (sQuery && sQuery.length > 0) {
 				$.ajax({
 					url: url,
@@ -2658,15 +3827,13 @@ sap.ui.define([
 					async: false,
 					success: function (response) {
 
-						/*pViewModel.setData(response.d.results);
-						var pViewData = response.d.results;*/
 						pViewModel.setData(response.results);
 						var pViewData = response.results;
 						for (var i = 0; i < pViewData.length; i++) {
-							pViewData[i].SELLING_STYLE_CONCAT__C = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].SELLING_STYLE_NUM__C + ")";
+							pViewData[i].SELLING_STYLE_CONCAT__C = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].PRODUCT_STYLE_NUMBER__C + ")";
 							// pViewData[i].NAME = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].SELLING_STYLE_NUM__C + ")";
 							pViewData[i].NAME = pViewData[i].PRODUCT_NAME__C;
-							pViewData[i].MASTER_STYLE_CONCAT__C = pViewData[i].MASTER_NAME__C + "(" + pViewData[i].MASTER_STYLE_NUM__C + ")";
+							pViewData[i].MASTER_STYLE_CONCAT__C = pViewData[i].MASTER_STYLE_NAME__C + "(" + pViewData[i].MASTER_STYLE_NUM__C + ")";
 							pViewData[i].INVENTORY_STYLE_CONCAT__C = pViewData[i].INVENTORY_STYLE_NAME__C + "(" + pViewData[i].INVENTORY_STYLE_NUM__C +
 								")";
 							pViewData[i].TM3_PRICE_CONCAT__C = pViewData[i].INVENTORY_STYLE_NAME__C + "(" + pViewData[i].INVENTORY_STYLE_NUM__C + ")";
@@ -2679,11 +3846,6 @@ sap.ui.define([
 							"WAREHOUSE_CODE__C": "",
 							"WAREHOUSE_CODE__DESC": ""
 						}];
-
-						/*var proCatData = [{
-							"key": 0,
-							"name": ""
-						}];*/
 
 						var brandData = [];
 
@@ -2702,20 +3864,6 @@ sap.ui.define([
 							if (whAdded === false) {
 								whData.push(tempWH);
 							}
-
-							/*var tempProCat = {
-								"key": j + 1,
-								"name": pViewData[j].SALESFORCE_PRODUCT_CATEGORY__C
-							};
-							var proCatAdded = false;
-							for (var s = 0; s < proCatData.length; s++) {
-								if (pViewData[j].SALESFORCE_PRODUCT_CATEGORY__C === proCatData[s].name) {
-									proCatAdded = true;
-								}
-							}
-							if (proCatAdded === false) {
-								proCatData.push(tempProCat);
-							}*/
 
 							var tempBrand = {
 								"key": j + 1,
@@ -2738,17 +3886,6 @@ sap.ui.define([
 						that.getView().byId("wh").setSelectedKey(0);
 						that.getView().byId("wh2").setModel(whModel, "warehouses");
 						that.getView().byId("wh2").setSelectedKey(0);
-						// that.getView().getModel("warehouses").refresh();
-
-						/*var proCategory = {
-							"ProductCategory": proCatData
-						};
-						var catModel = new JSONModel(proCategory);
-						that.getView().setModel(catModel, "local");
-						that.getView().byId("prodCat").setModel(catModel, "local");
-						that.getView().byId("prodCat2").setModel(catModel, "local");
-						that.getView().byId("prodCat").setSelectedKey(0);
-						that.getView().byId("prodCat2").setSelectedKey(0);*/
 
 						var allBrands = that.getView().byId("brand").getModel("brandModel").getProperty("/allBrand");
 						if (allBrands === undefined) {
@@ -2779,7 +3916,6 @@ sap.ui.define([
 							}
 						}
 
-						// var oModel = new JSONModel(temSales);
 						that.getView().getModel("brandModel").setProperty("/allChannel", temSales);
 						that.getView().byId("brand").setSelectedKey(0);
 						that.getView().byId("brand2").setSelectedKey(0);
@@ -2792,13 +3928,13 @@ sap.ui.define([
 						oTable.removeAllColumns();
 
 						oTable2.removeAllItems();
+						sap.ui.getCore().busyIndicator.close();
 
 						// that.bindRecords();
 					},
 					error: function (error) {
 						console.log(error);
-						//sap.m.MessageToast.show("Error");
-						//return false;
+						sap.ui.getCore().busyIndicator.close();
 					}
 				});
 			}
@@ -2847,20 +3983,15 @@ sap.ui.define([
 
 				var oFilter = new Filter(aFilters);
 
-				// update list binding
 				var oList = this.byId("list");
 				var oBinding = oList.getBinding("items");
 				oBinding.filter(oFilter, "Application");
-				// update list binding
 				var oList2 = this.byId("list2");
 				var oBinding2 = oList2.getBinding("items");
 				oBinding2.filter(oFilter, "Application");
 			} else {
 				this.bindRecords();
 
-				/*	var oModel = new JSONModel(this.masterData);
-					this.byId("list").setModel(oModel, "MasterModel");
-					this.getModel("MasterModel").refresh();*/
 			}
 
 		},
@@ -2940,40 +4071,7 @@ sap.ui.define([
 			var aFilterItems = oEvent.getParameters().filterItems,
 				aFilters = [],
 				aCaptions = [];
-
-			// update filter state:
-			// combine the filter array and the filter string
-
-			/*this._oListFilterState.aFilter = aFilters;
-			this._updateFilterBar(aCaptions.join(", "));
-			this._applyFilterSearch();*/
-			// this._applySortGroup(oEvent);
 		},
-
-		/**
-		 * Apply the chosen sorter and grouper to the master list
-		 * @param {sap.ui.base.Event} oEvent the confirm event
-		 * @private
-		 */
-
-		/*applySortGroup: function (oEvent) {
-					var mParams = oEvent.getParameters(),
-						sPath,
-						bDescending,
-						aSorters = [];
-					// apply sorter to binding
-					// (grouping comes before sorting)
-					if (mParams.groupItem) {
-						sPath = mParams.groupItem.getKey();
-						bDescending = mParams.groupDescending;
-						// var vGroup = this._oGroupFunctions[sPath];
-						// aSorters.push(new Sorter(sPath, bDescending, vGroup));
-					}
-					sPath = mParams.sortItem.getKey();
-					bDescending = mParams.sortDescending;
-					aSorters.push(new Sorter(sPath, bDescending));
-					this._oList.getBinding("items").sort(aSorters);
-				},*/
 
 		/**
 		 * Event handler for the list selection event
@@ -3084,6 +4182,7 @@ sap.ui.define([
 			var width = this.getView()._oContextualSettings.contextualWidth;
 			if (width) {
 				if (width < 700) {
+					var that = this;
 					var selected = priceData.filter(function (a) {
 						if (a[h0] === undefined || a[h0] === null) {
 							a[h0] = "";
@@ -3101,8 +4200,9 @@ sap.ui.define([
 							.getIntro() && a[h3] === oItem.getNumberUnit();
 					});
 					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);
+
 					this.getRouter().navTo("object", {
-						objectId: oItem.getIntro()
+						objectId: oItem.getNumber()
 					}, bReplace);
 				} else {
 					var selected = priceData.filter(function (a) {
@@ -3147,7 +4247,7 @@ sap.ui.define([
 					});
 					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);
 					this.getRouter().navTo("object", {
-						objectId: oItem.getIntro()
+						objectId: oItem.getNumber()
 					}, bReplace);
 				} else {
 					var selected = priceData.filter(function (a) {
@@ -3185,46 +4285,8 @@ sap.ui.define([
 		_updateListItemCount: function (iTotalItems) {
 			var sTitle;
 			// only update the counter if the length is final
-			/*if (this._oList.getBinding("items").isLengthFinal()) {
-				sTitle = this.getResourceBundle().getText("masterTitleCount", [iTotalItems]);
-				this.getModel("masterView").setProperty("/title", sTitle);
-			}*/
 		},
 
-		/**
-		 * Internal helper method to apply both filter and search state together on the list binding
-		 * @private
-		 */
-		/*_applyFilterSearch: function () {
-			var aFilters = this._oListFilterState.aSearch.concat(this._oListFilterState.aFilter),
-				oViewModel = this.getModel("masterView");
-			this._oList.getBinding("items").filter(aFilters, "Application");
-			// changes the noDataText of the list in case there are no filter results
-			if (aFilters.length !== 0) {
-				oViewModel.setProperty("/noDataText", this.getResourceBundle().getText("masterListNoDataWithFilterOrSearchText"));
-			} else if (this._oListFilterState.aSearch.length > 0) {
-				// only reset the no data text to default when no new search was triggered
-				oViewModel.setProperty("/noDataText", this.getResourceBundle().getText("masterListNoDataText"));
-			}
-		},*/
-
-		/**
-		 * Internal helper method that sets the filter bar visibility property and the label's caption to be shown
-		 * @param {string} sFilterBarText the selected filter value
-		 * @private
-		 */
-		/*_updateFilterBar: function (sFilterBarText) {
-			var oViewModel = this.getModel("masterView");
-			oViewModel.setProperty("/isFilterBarVisible", (this._oListFilterState.aFilter.length > 0));
-			oViewModel.setProperty("/filterBarLabel", this.getResourceBundle().getText("masterFilterBarText", [sFilterBarText]));
-		},*/
-		sortGridMeta: function (objA, objB) {
-			if (objA['PRIMARY_DISPLAY_ORDER__C'] === undefined || objB['PRIMARY_DISPLAY_ORDER__C'] === undefined) return 1;
-			let objectA = objA['PRIMARY_DISPLAY_ORDER__C'];
-			let objectB = objB['PRIMARY_DISPLAY_ORDER__C'];
-			if (objectA == undefined || objectB == undefined) return 0;
-			else return objectA - objectB;
-		},
 		sortTHeader: function (objA, objB) {
 			return objA.key - objB.key;
 		},
@@ -3239,6 +4301,23 @@ sap.ui.define([
 					}
 				}
 			}
+		},
+
+		//To Set Comments Value state to Success
+
+		OnComment: function () {
+
+			var oComment = sap.ui.getCore().byId("txtComment");
+			var lblcommenterrmsg = sap.ui.getCore().byId("lblcommenterrmsg");
+			oComment.setValueState("Success");
+			lblcommenterrmsg.setVisible(false);
+
+		},
+		
+		
+		// Add new Product 
+		onAddProduct: function() {
+			this.getRouter().navTo("addProduct");
 		}
 	});
 

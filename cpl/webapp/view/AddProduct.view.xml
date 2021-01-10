@@ -1,0 +1,56 @@
+<mvc:View controllerName="cf.cpl.controller.AddProduct" xmlns="sap.m" xmlns:semantic="sap.f.semantic" xmlns:f="sap.f"
+	xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:mvc="sap.ui.core.mvc">
+	<!--	<Shell>
+		<App>
+			<pages>
+				<Page showNavButton="true" navButtonPress="backToList">
+					<content>-->
+	<semantic:SemanticPage preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop" visible="true">
+		<semantic:titleHeading>
+			<VBox>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="5rem"/>
+					</contentLeft>
+					<contentMiddle>
+						<core:Icon src="sap-icon://e-learning"></core:Icon>
+						<Title text="CPL Add Product"/>
+					</contentMiddle>
+					<contentRight>
+						<SearchField id="apSearchField" showRefreshButton="false" search="onAPSearch" width="100%">
+							<layoutData>
+								<OverflowToolbarLayoutData minWidth="150px" maxWidth="240px" shrinkable="true" priority="NeverOverflow"/>
+							</layoutData>
+						</SearchField>
+					</contentRight>
+				</Bar>
+				<FlexBox alignItems="Start">
+					<Label text="Warehouse" class="clssearchmenu"></Label>
+					<ComboBox id="apWH" items="{warehouses>/wh}" change="onWhChange" showSecondaryValues="true" class="sapUiSmallMargin">
+						<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
+					</ComboBox>
+					<Label text="Sales Channel" class="clssearchmenu"></Label>
+					<ComboBox id="apBrand" items="{brandModel>/allChannel}" change="onBrandChange" class="sapUiSmallMargin">
+						<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
+					</ComboBox>
+					<Label text="Product Category" class="clssearchmenu"></Label>
+					<ComboBox id="apProdCat" items="{local>/ProductCategory}" change="onCategoryChange" class="sapUiSmallMargin">
+						<core:Item key="{local>key}" text="{local>name}"/>
+					</ComboBox>
+					<ToolbarSpacer/>
+					<Button id="apFilterButton" press="onFilter" icon="sap-icon://filter" visible="false"></Button>
+					<Button text="Reset" type="Reject" press="onReset" class="sapUiSmallMarginTop"></Button>
+				</FlexBox>
+			</VBox>
+		</semantic:titleHeading>
+		<semantic:content>
+			<Table id="productList" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true" visible="true"
+				class="desktopTblCls"></Table>
+		</semantic:content>
+	</semantic:SemanticPage>
+	<!--</content>
+				</Page>
+			</pages>
+		</App>
+	</Shell>-->
+</mvc:View>

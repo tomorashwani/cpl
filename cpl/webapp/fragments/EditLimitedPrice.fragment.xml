@@ -1,0 +1,46 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	xmlns:upload="sap.m.upload">
+	<Dialog title="Set Date" contentWidth="500px" titleAlignment="Center" horizontalScrolling="false" afterClose="afterClosePGSurface">
+		<Bar class="clsbar">
+			<contentMiddle>
+				<Text class="clstitle" text="To set a date, click on the input fields or on the calendar icon next to the input fields."/>
+			</contentMiddle>
+		</Bar>
+		<VBox>
+			<MessageStrip id="errormsg" visible="false" class="sapUiMediumMarginBegin sapUiMediumMarginEnd" type="Error" showIcon="true" showCloseButton="true"></MessageStrip>
+			
+		</VBox>
+		<VBox>
+			<f:SimpleForm id="form1" editable="true" layout="ResponsiveGridLayout" labelSpanXL="4" labelSpanL="4" labelSpanM="12" labelSpanS="12"
+				adjustLabelSpan="false" emptySpanXL="0" emptySpanL="0" emptySpanM="0" emptySpanS="0" columnsXL="2" columnsL="2" columnsM="1"
+				singleContainerFullSize="false">
+				<f:content>
+					
+					<Label text="Start Date" required="true"/>
+					<DatePicker id="dpkStartdate" valueStateText="Complete this field" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
+					<Label text="End Date" required="true"/>
+					<DatePicker id="dpkEnddate" valueStateText="Complete this field" placeholder="MMMM dd, yyyy" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
+					<DatePicker id="hiddenEnddate" visible="false" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
+				</f:content>
+			</f:SimpleForm>
+		</VBox>
+		<Bar class="clsaccesslevel sapUiSmallMarginBottom">
+			<contentMiddle>
+				<VBox>
+					<SegmentedButton id="sbDays" selectionChange="onChangeDays">
+						<items>
+							<SegmentedButtonItem key="30" width="4rem" text="+30"/>
+							<SegmentedButtonItem key="60" width="4rem" text="+60"/>
+							<SegmentedButtonItem key="90" width="4rem" text="+90"/>
+							<SegmentedButtonItem key="365" width="4rem" text="YE"/>
+						</items>
+					</SegmentedButton>
+				</VBox>
+			</contentMiddle>
+		</Bar>
+		<buttons>
+			<Button id="btnCancelLimited" text="Cancel" type="Reject" press="OnCancelLimitedPrice"></Button>
+			<Button id="btnSaveDate" text="Save Date" type="Emphasized" press="onSaveDate"></Button>
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

@@ -14,7 +14,6 @@
 			"version": "1.40.12"
 		}
 	},
-
 	"sap.ui": {
 		"technology": "UI5",
 		"icons": {
@@ -31,7 +30,6 @@
 			"phone": true
 		}
 	},
-
 	"sap.ui5": {
 		"flexEnabled": false,
 		"rootView": {
@@ -65,9 +63,11 @@
 			}
 		},
 		"resources": {
-			"css": [{
-				"uri": "css/style.css"
-			}]
+			"css": [
+				{
+					"uri": "css/style.css"
+				}
+			]
 		},
 		"routing": {
 			"config": {
@@ -81,18 +81,26 @@
 					"target": "notFound"
 				}
 			},
-			"routes": [{
-				"pattern": "",
-				"name": "master",
-				"target": "master"
-			}, {
-				"pattern": "Categories/{objectId}",
-				"name": "object",
-				"target": [
-					"master",
-					"object"
-				]
-			}],
+			"routes": [
+				{
+					"pattern": "",
+					"name": "master",
+					"target": "master"
+				},
+				{
+					"pattern": "Categories/{objectId}",
+					"name": "object",
+					"target": [
+						"master",
+						"object"
+					]
+				},
+				{
+					"pattern": "AddProduct",
+					"name": "addProduct",
+					"target": "addProduct"
+				}
+			],
 			"targets": {
 				"master": {
 					"viewName": "Master",
@@ -113,6 +121,10 @@
 				"notFound": {
 					"viewName": "NotFound",
 					"viewId": "notFound"
+				},
+				"addProduct": {
+					"viewType": "XML",
+					"viewName": "AddProduct"
 				}
 			}
 		}
