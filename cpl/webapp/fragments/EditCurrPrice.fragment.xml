@@ -11,19 +11,23 @@
 				<Text id="txtSFCurrPrice" text="{editModel>/0/BILLING_PRICE_ROLL__C} | {editModel>/0/BILLING_PRICE_CUT__C}" visible="false"/>
 				<Text id="txtHFCurrPrice" text="{editModel>/0/BILLING_PRICE__C}" visible="false"/>
 				<Text id="txtACCurrPrice" text="{editModel>/0/BILLING_PRICE__C}" visible="false"/>
+				<Text id="txtCushCurrPrice" text="{editModel>/0/BILLING_PRICE__C}" visible="false"/> <!--Added by <JAYANT> for <2269>-->
 				<!--<Text id="txtBGurrPrice" text="$1.40" visible="false"/>-->
 			</contentMiddle>
 		</Bar>
 		<Bar class="clsbar">
 			<contentMiddle>
-				<StepInput id="txtRoll" value="{editModel>/0/EditRollPrice}" displayValuePrecision="2" min="1" width="10rem" step="1" enabled="true" editable="true"
+				<StepInput id="txtRoll" value="{editModel>/0/EditRollPrice}" displayValuePrecision="2" min="1" width="10rem" step="0.10" enabled="true" editable="true"
 					textAlign="Center" visible="false"/>
-				<StepInput id="txtCut" value="{editModel>/0/EditCutPrice}" displayValuePrecision="2" min="1" width="10rem" step="1" enabled="true" editable="true"
+				<StepInput id="txtCut" value="{editModel>/0/EditCutPrice}" displayValuePrecision="2" min="1" width="10rem" step="0.10" enabled="true" editable="true"
 					textAlign="Center" visible="false"/>
 				<StepInput id="txtCarton" value="{editModel>/0/EditCartonPrice}" displayValuePrecision="2" min="0.05" width="10rem" step="0.05" enabled="true" editable="true"
 					textAlign="Center" visible="false"/>
 				<StepInput id="txtEach" value="{editModel>/0/EditEachPrice}" displayValuePrecision="2" min="0.05" width="10rem" step="0.05" enabled="true" editable="true"
 					textAlign="Center" visible="false"/>
+				<StepInput id="txtSqYd" value="{editModel>/0/EditSqYdPrice}" displayValuePrecision="2" min="0.1" width="10rem" step="0.1" enabled="true" editable="true"
+					textAlign="Center" visible="false"/> <!--Added by <JAYANT> for <2269> -->
+	
 			</contentMiddle>
 		</Bar>
 		<Bar class="clsbar">
@@ -32,6 +36,7 @@
 				<Label id="lblCarton" text="Carton" class="clseditpopuptext" visible="false"/>
 				<Label id="lblCut" text="Cut" class="clseditpopuptext" visible="false"/>
 				<Label id="lblEach" text="Each" class="clseditpopuptext" visible="false"/>
+				<Label id="lblSqYd" text="SY" class="clseditpopuptext" visible="false"/> <!--Added by <JAYANT> for <2269> -->
 			</contentMiddle>
 		</Bar>
 		<Bar class="clsaccesslevel">
@@ -48,7 +53,7 @@
 					</SegmentedButton>
 					<SegmentedButton id="sbAccLevel" visible="false" selectionChange="onAccesBtnChange">
 						<items>
-								<SegmentedButtonItem key="TM1" width="4rem" text="TM1"/>
+							<SegmentedButtonItem key="TM1" width="4rem" text="TM1"/>
 							<SegmentedButtonItem key="TM2" width="4rem" text="TM2"/>
 							<SegmentedButtonItem key="TM3" width="4rem" text="TM3"/>
 							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
@@ -60,6 +65,15 @@
 							<SegmentedButtonItem key="BG" width="4rem" text="BG"/>
 						</items>
 					</SegmentedButton>
+					<!--Start by <JAYANT> for <2269> -->
+					<SegmentedButton id="sbCushLevel" visible="false" selectionChange="onCushBtnChange">
+						<items>
+							<SegmentedButtonItem key="TM" width="4rem" text="TM"/>
+							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
+							<SegmentedButtonItem key="RVP" width="4rem" text="RVP"/>
+						</items>
+					</SegmentedButton>
+					<!--End by <JAYANT> for <2269> -->
 				</VBox>
 			</contentMiddle>
 		</Bar>

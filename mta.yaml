@@ -49,7 +49,7 @@ modules:
     provides:
      - name: usernode_api
        properties:
-          url: ${default-url}
+          url: '${default-url}'
     properties:
       UAA_SERVICE_NAME: uaa_Mohawk_MTA
     requires:

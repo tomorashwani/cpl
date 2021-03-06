@@ -10,17 +10,32 @@
 			<Text id="idtxtCut1" visible="false"/>
 			<Text id="idtxtCarton1" visible="false"/>
 			<Text id="idtxtEach1" visible="false"/>
+			<Text id="idtxtSqYd1" visible="false"/> <!-- Added by <JAYANT PRAKASH> for <2269 -->
 			<l:HorizontalLayout>
-				<RadioButtonGroup id="rdbReason" select="onSelectionReason" valueState="None" class="sapUiSmallMarginBottom">
+				<!--<RadioButtonGroup id="rdbReason" select="onSelectionReason" valueState="None" class="sapUiSmallMarginBottom">
 					<RadioButton id="rdb1" groupName="Reason" text="Promotional Price"/>
 					<RadioButton id="rdb2" groupName="Reason" text="Stocking Price"/>
 					<RadioButton id="rdb3" groupName="Reason" text="Competitor Price Match"/>
 					<RadioButton id="rdb4" groupName="Reason" text="Promo Code"/>
 					<RadioButton id="rdb5" groupName="Reason" text="Other"/>
-				</RadioButtonGroup>
+				</RadioButtonGroup>-->
+				<VBox class="sapUiSmallMargin">
+				<RadioButton id="rdb1" groupName="Reason" text="Promotional Price" select="onSelectionReason" />
+				<RadioButton id="rdb2" groupName="Reason" text="Stocking Price" select="onSelectionReason" />
+				<RadioButton id="rdb3" groupName="Reason" text="Competitor Price Match" select="onSelectionReason" />
+				<HBox>
+				<RadioButton id="rdb4" groupName="Reason" text="Promo Code" select="onSelectionReason" visible="{= ${configModel>/multiPricing} === false }"/>
+				<ComboBox id="txtPromocode" items="{promoModel>/}" loadItems="loadPromoCode" visible="{= ${configModel>/multiPricing} === false }" change="onPromoCodeChange" class="sapUiMediumMarginBegin">
+							<core:Item key="{promoModel>PROMO_CODE__C}" text="{promoModel>PROMO_CODE__C}"/>
+						</ComboBox>
+				<!--<Input id="txtPromocode" visible="false" type="Text" class="clstxtcomments" textFormatMode="Key" showValueHelp="true"
+				valueHelpRequest="_handleValueHelpPromocode"></Input>-->
+				</HBox>
+				<RadioButton id="rdb5" groupName="Reason" text="Other" select="onSelectionReason" />
+				</VBox>
 			</l:HorizontalLayout>
-			<Input id="txtPromocode" visible="false" type="Text" class="clstxtcomments" textFormatMode="Key" showValueHelp="true"
-				valueHelpRequest="_handleValueHelpPromocode"></Input>
+			<!--<Input id="txtPromocode" visible="false" type="Text" class="clstxtcomments" textFormatMode="Key" showValueHelp="true"
+				valueHelpRequest="_handleValueHelpPromocode"></Input>-->
 			<Label id="lblPromocodeMsg" class="clserrmsg" text="Please select valid promocode" visible="false"/>
 		</VBox>
 		<VBox>
@@ -31,7 +46,8 @@
 		<buttons>
 			<Button text="Back" type="Ghost" press="onBackJustification"/>
 			<Button text="Cancel" type="Reject" press="OnCancelJustification"/>
-			<Button text="Save" type="Emphasized" press="onSavePrice"/>
+			<Button text="Save" type="Emphasized" press="onSavePrice" visible="{= ${configModel>/multiPricing} === false }"/>
+			<Button text="Apply Multi Pricing" type="Emphasized" press="onMultiPricing" visible="{= ${configModel>/multiPricing} === true }"/>
 		</buttons>
 	</Dialog>
 </core:FragmentDefinition>

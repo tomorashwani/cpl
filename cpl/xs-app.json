@@ -11,6 +11,13 @@
 		"destination": "pricing",
 		"csrfProtection": false
 	}, 
+	{
+		"source": "/cpl_submit/(.*)$",
+		"target": "$1",
+		"authenticationType": "none",
+		"destination": "cpl_submit",
+		"csrfProtection": false
+	}, 
     {
       "source": "^(.*)$",
       "target": "$1",

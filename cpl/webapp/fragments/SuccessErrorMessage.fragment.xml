@@ -1,0 +1,21 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<Dialog title="" contentWidth="500px" horizontalScrolling="false" showHeader="false" afterClose="afterCloseMessage">
+		<IconTabBar id="icontab1" expanded="true" expandable="false" class="sapUiResponsiveContentPadding">
+			<items>
+				<IconTabFilter icon="sap-icon://message-success" iconColor="Positive" design="Horizontal" text="Success" key="Success">
+					<Text id="txtSuccess"/>
+				</IconTabFilter>
+				<IconTabFilter icon="sap-icon://message-error" iconColor="Negative" design="Horizontal" text="Error" key="Error">
+					<List id="messagelist" headerText="" noDataText="No Messages available" items="{ path: '/results'}">
+						<items>
+							<StandardListItem title="{Error}"/>
+						</items>
+					</List>
+				</IconTabFilter>
+			</items>
+		</IconTabBar>
+		<buttons>
+			<Button id="btnOK" text="OK" type="Emphasized" press="onbtnOK"></Button>
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

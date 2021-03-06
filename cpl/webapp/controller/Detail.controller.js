@@ -2,8 +2,9 @@ sap.ui.define([
 	"./BaseController",
 	"sap/ui/model/json/JSONModel",
 	"../model/formatter",
-	"sap/m/library"
-], function (BaseController, JSONModel, formatter, mobileLibrary) {
+	"sap/m/library",
+	"sap/ui/Device"
+], function (BaseController, JSONModel, formatter, mobileLibrary, Device) {
 	"use strict";
 
 	// shortcut for sap.m.URLHelper
@@ -18,6 +19,8 @@ sap.ui.define([
 		/* =========================================================== */
 
 		onInit: function () {
+			var oDeviceModel = new JSONModel(Device);
+			this.setModel(oDeviceModel, "device");
 			// Model used to manipulate control states. The chosen values make sure,
 			// detail page is busy indication immediately so there is no break in
 			// between the busy indication for loading the view's meta data
@@ -249,15 +252,55 @@ sap.ui.define([
 			selectedData.RVP_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.RVP_ROLL_PRICE__C)).toFixed(2) + " / $" + (parseFloat(
 				selectedData.RVP_CUT_PRICE__C)).toFixed(2);
 
+			//changes by diksha -bug 4671- 9/2/2021//start
+			selectedData.BILLING_PRICE_ROLL__C = typeof (selectedData.BILLING_PRICE_ROLL__C) === "string" ? selectedData.BILLING_PRICE_ROLL__C
+				.split("$ ").length > 0 ? parseFloat(selectedData.BILLING_PRICE_ROLL__C.split("$ ")[1]) : parseFloat(selectedData.BILLING_PRICE_ROLL__C) :
+				selectedData.BILLING_PRICE_ROLL__C;
+			selectedData.BILLING_PRICE_CUT__C = typeof (selectedData.BILLING_PRICE_CUT__C) === "string" ? selectedData.BILLING_PRICE_CUT__C
+				.split("$ ").length > 0 ? parseFloat(selectedData.BILLING_PRICE_CUT__C.split("$ ")[1]) : parseFloat(selectedData.BILLING_PRICE_CUT__C) :
+				selectedData.BILLING_PRICE_CUT__C;
+
+			//changes by diksha -bug 4671- 9/2/2021//End
+
 			selectedData.BILLING_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.BILLING_PRICE_ROLL__C)).toFixed(2) + " / $" + (parseFloat(
 				selectedData.BILLING_PRICE_CUT__C)).toFixed(2);
-
-			selectedData.NET_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.NET_PRICE_ROLL__C)).toFixed(2) + " / $" + (parseFloat(
-				selectedData.NET_PRICE_CUT__C)).toFixed(2);
+			//Start of changes by <JAYANT PRAKASH> for <4995/5231>	
+			if (selectedCat === "Residential Broadloom" || selectedCat === "Commercial Broadloom" || selectedCat ===
+				"Resilient Sheet") {
+				if (selectedData.APPROVAL_STATUS__C !== null && selectedData.APPROVAL_STATUS__C !== ""
+				&& selectedData.APPROVAL_STATUS__C !== "1" && selectedData.APPROVAL_STATUS__C !== "4") {
+					selectedData.NET_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.REQUESTED_NET_PRICE_ROLL__C)).toFixed(2) + " / $" + (parseFloat(
+						selectedData.REQUESTED_NET_PRICE_CUT__C)).toFixed(2);
+				} else { //Start of changes by <JAYANT PRAKASH> for <4995/5231>
+					selectedData.NET_PRICE_CONCAT__C = "$" + (parseFloat(selectedData.NET_PRICE_ROLL__C)).toFixed(2) + " / $" + (parseFloat(
+						selectedData.NET_PRICE_CUT__C)).toFixed(2);
+				}
+			}
 
 			selectedData.CORP_MIN_ROLL_CUT_CONCAT__C = "$" + (parseFloat(selectedData.CORPORATE_MINI_PRICE_ROLL__C)).toFixed(2) + " / $" + (
 				parseFloat(
 					selectedData.CORPORATE_MINI_PRICE_CUT__C)).toFixed(2);
+			//Start of changes by <JAYANT PRAKASH> for <5080>
+			var effective_date_temp = selectedData.EFFECTIVE_DATE_CONCAT__C.split("/")[1].split("-")[0];
+			if (effective_date_temp >= "4000") {
+				selectedData.EFFECTIVE_DATE_CONCAT__C = selectedData.EFFECTIVE_DATE_CONCAT__C.split("/")[0] + "/";
+			}
+			//End of changes by <JAYANT PRAKASH> for <5080>
+
+			//Start of changes by <JAYANT PRAKASH> for <4995/5231>
+			if (selectedData.APPROVAL_STATUS__C !== null && selectedData.APPROVAL_STATUS__C !== ""
+			&& selectedData.APPROVAL_STATUS__C !== "1" && selectedData.APPROVAL_STATUS__C !== "4") {
+				if (selectedCat === "Carpet Tile" || selectedCat === "Tile" || selectedCat === "TecWood" || selectedCat ===
+					"SolidWood" || selectedCat === "RevWood" || selectedCat === "Resilient Tile") {
+					selectedData.NET_PRICE__C = selectedData.REQUESTED_NET_PRICE_CARTON__C;
+				} else if (selectedCat === "Accessories") {
+					selectedData.NET_PRICE__C = selectedData.REQUESTED_NET_PRICE__C;
+				}
+				else if (selectedCat === "Cushion") {
+					selectedData.NET_PRICE__C = selectedData.REQUESTED_NET_PRICE__C;
+				}
+			}
+			//End of changes by <JAYANT PRAKASH> for <4995/5231>
 
 			/*selectedData.TM1_ROLL_PRICE__C !== null && selectedData.TM1_CUT_PRICE__C !== null ? selectedData.TM1_PRICE_CONCAT__C = "$" + (
 					selectedData.TM1_ROLL_PRICE__C).toFixed(2) + " / $" + (selectedData.TM1_CUT_PRICE__C).toFixed(2) : selectedData.TM1_PRICE_CONCAT__C =
@@ -297,10 +340,36 @@ sap.ui.define([
 			for (var p = 0; p < secondary.length; p++) {
 				var field = secondary[p]['FIELD_API_NAME__C'].toUpperCase();
 				field = field.includes("PRODUCT__R.") ? field.replace("PRODUCT__R.", "") : field;
-				var sObjAttr = new sap.m.ObjectAttribute({
-					title: secondary[p]['SHORT_LABEL__C'],
-					text: selectedData[field] //pViewData[0].BRAND_DESCRIPTION__C
-				});
+				//Added by diksha - bug 5237 //
+				if (secondary[p]['SHORT_LABEL__C'] === "Intro Date" && selectedData.INTRODUCTION_DATE__C.length > 10) {
+					var IntroDateFormat = new Date(parseFloat(selectedData[field].split('(')[1].split(')')[0]));
+					var GetYear = IntroDateFormat.getFullYear();
+					var getMonth = IntroDateFormat.getMonth() + 1;
+					if (getMonth < 10) {
+						getMonth = "0" + getMonth;
+					}
+					var getDate = IntroDateFormat.getDate();
+					if (getDate < 10) {
+						getDate = "0" + getDate;
+					}
+					var getFinalDate = GetYear + "-" + getMonth + "-" + getDate;
+					var sObjAttr = new sap.m.ObjectAttribute({
+						title: secondary[p]['SHORT_LABEL__C'],
+						text: getFinalDate
+					});
+
+				} else {
+					var sObjAttr = new sap.m.ObjectAttribute({
+						title: secondary[p]['SHORT_LABEL__C'],
+						text: selectedData[field]
+					});
+				}
+				//end by Diksha - bug 5237
+
+				/*	var sObjAttr = new sap.m.ObjectAttribute({
+						title: secondary[p]['SHORT_LABEL__C'],
+						text: selectedData[field] //pViewData[0].BRAND_DESCRIPTION__C
+					});*/
 				sGrid.insertContent(sObjAttr);
 			}
 
@@ -425,6 +494,7 @@ sap.ui.define([
 			this.getModel("appView").setProperty("/actionButtonsInfo/midColumn/fullScreen", false);
 			// No item should be selected on master after detail page is closed
 			this.getOwnerComponent().oListSelector.clearMasterListSelection();
+			sap.ui.getCore().getModel("configModel").setProperty("/concatDataFlag", true);
 			this.getRouter().navTo("master");
 		},
 

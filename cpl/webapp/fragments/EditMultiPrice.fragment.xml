@@ -1,0 +1,66 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	xmlns:upload="sap.m.upload">
+	<Dialog title="Multi Edit Price" contentWidth="500px" titleAlignment="Center" horizontalScrolling="false" afterClose="afterCloseMultiPrice">
+		<Bar class="clsbar">
+			<contentMiddle>
+				<Label text="Apply the pricing calculated before to all selected products"/>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsbar1">
+			<contentMiddle>
+				<Label id="lblequal" class="clslblbar1" text="="/>
+				<Label id="lblPrice" class="clslblbar1" text="TM1"/>
+				<Label id="lblPriceval" class="clslblbar1" text="$0.00"/>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsbar">
+			<contentMiddle>
+				<Button id="btndecrement1"  class="btndecrement" text="-$0.01" type="Reject" press="onbtnDecPressVal"></Button>
+				<Button id="btndecrement5" class="btndecrement" text="-$0.05" type="Reject" press="onbtnDecPressVal"></Button>
+				<Button id="btnincrement01" class="btnincrement" text="+$0.01" type="Accept" press="onbtnIncPressVal"></Button>
+				<Button id="btnincrement05" class="btnincrement" text="+$0.05" type="Accept" press="onbtnIncPressVal"></Button>
+			</contentMiddle>
+		</Bar>
+		<Bar class="clsaccesslevel">
+			<contentMiddle>
+				<VBox>
+					<SegmentedButton id="sbMultisurfaceLevel" visible="false" selectionChange="onMultiSurfaceBtnChange">
+						<items>
+							<SegmentedButtonItem key="TM1" width="4rem" text="TM1"/>
+							<SegmentedButtonItem key="TM2" width="4rem" text="TM2"/>
+							<SegmentedButtonItem key="TM3" width="4rem" text="TM3"/>
+							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
+							<SegmentedButtonItem key="RVP" width="4rem" text="RVP"/>
+						</items>
+					</SegmentedButton>
+					<SegmentedButton id="sbMultiAccLevel" visible="false" selectionChange="onMultiAccesBtnChange">
+						<items>
+							<SegmentedButtonItem key="TM" width="4rem" text="TM"/>
+							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
+							<SegmentedButtonItem key="RVP" width="4rem" text="RVP"/>
+						</items>
+					</SegmentedButton>
+					<!-- Added by <JAYANT PRAKASH> for <2269> -->
+					<SegmentedButton id="sbMultiCushLevel" visible="false" selectionChange="onMultiCushBtnChange">
+						<items>
+							<SegmentedButtonItem key="TM" width="4rem" text="TM"/>
+							<SegmentedButtonItem key="DM" width="4rem" text="DM"/>
+							<SegmentedButtonItem key="RVP" width="4rem" text="RVP"/>
+						</items>
+					</SegmentedButton>
+					<!-- Added by <JAYANT PRAKASH> for <2269> -->
+					<!--	<SegmentedButton id="sbBGLevel" visible="false" selectionChange="onBGBtnChange">
+						<items>
+							<SegmentedButtonItem key="BG" width="4rem" text="BG"/>
+						</items>
+					</SegmentedButton>-->
+				</VBox>
+			</contentMiddle>
+		</Bar>
+		<buttons>
+			<Button id="btnBackMulti" visible="false" text="Back" type="Ghost" press="OnBackMultiLimitedPrice"></Button>
+			<Button id="btnCancelMulti" text="Cancel" type="Reject" press="OnCancelMultiPrice"></Button>
+			<Button id="btnNextMulti" text="Next" type="Emphasized" press="OnNextMultiPrice"></Button>
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

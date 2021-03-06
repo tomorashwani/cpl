@@ -1,0 +1,51 @@
+<mvc:View xmlns:core="sap.ui.core" xmlns:mvc="sap.ui.core.mvc" xmlns="sap.m" controllerName="cf.cpl.controller.MultiEdit"
+	xmlns:html="http://www.w3.org/1999/xhtml" xmlns:semantic="sap.f.semantic" xmlns:f="sap.f" 
+	xmlns:l="sap.ui.layout">
+	
+	<semantic:SemanticPage id="multieditPage" preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop" visible="true">
+		<semantic:titleHeading>
+			<VBox>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="5rem"/>
+					</contentLeft>
+					<contentMiddle>
+						<core:Icon src="sap-icon://e-learning"></core:Icon>
+						<Title text="CPL Multi Edit"/>
+					</contentMiddle>
+					<contentRight>
+						<SearchField id="meSearchField" showRefreshButton="false" search="onMESearch" width="100%">
+							<layoutData>
+								<OverflowToolbarLayoutData minWidth="150px" maxWidth="240px" shrinkable="true" priority="NeverOverflow"/>
+							</layoutData>
+						</SearchField>
+					</contentRight>
+				</Bar>
+				<Bar class="addProductBar">
+					<contentLeft>
+						<VBox class="apVBox">
+							<ObjectAttribute title="Product Category" text="{multiEditModel>/selectedCat}" active="false"/>
+							<ObjectAttribute title="Account" text="{multiEditModel>/accDetails/ACCOUNT_NAME__C} ( {multiEditModel>/accDetails/ACCOUNT__C} )" active="false"/>
+						</VBox>
+					</contentLeft>
+					<contentRight>
+						<!--<Button id="SortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="true" visible="true" class="sapUiSmallMarginTop" />-->
+						<!--Start of Multi Edit Price -->
+						<Button text="Cancel Multi Pricing" type="Reject" press="onNavBack" class="sapUiSmallMarginTop"></Button>
+						<Button id="meSaveBtnText" text="Set Multi Pricing" type="Emphasized" press="onSetMultiPrice" enabled="true" class="sapUiSmallMarginTop sapUiSmallMarginBegin"></Button>
+						<Button id="sortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="true" class="sapUiSmallMarginTop"/>
+						<!--End of Multi Edit Price -->
+					</contentRight>
+				</Bar>
+				<FlexBox alignItems="Start" class="sapUiDemoFlexBoxSizeAdjustmentsZeroWidthItems">
+					<ToolbarSpacer/>
+				</FlexBox>
+			</VBox>
+		</semantic:titleHeading>
+		<semantic:content>
+			<Table id="meList" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true"
+				visible="true" mode="MultiSelect" class="desktopTblCls" select="onProductSelect"></Table>
+		</semantic:content>
+	</semantic:SemanticPage>
+	
+</mvc:View>

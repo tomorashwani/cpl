@@ -19,7 +19,7 @@
 					<Label text="Start Date" required="true"/>
 					<DatePicker id="dpkStartdate" valueStateText="Complete this field" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
 					<Label text="End Date" required="true"/>
-					<DatePicker id="dpkEnddate" valueStateText="Complete this field" placeholder="MMMM dd, yyyy" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
+					<DatePicker id="dpkEnddate" valueStateText="Complete this field" placeholder="MM DD YYYY" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
 					<DatePicker id="hiddenEnddate" visible="false" valueFormat="dd MMMM yyyy" displayFormat="long" class="sapUiSmallMarginBottom"/>
 				</f:content>
 			</f:SimpleForm>

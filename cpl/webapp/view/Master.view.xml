@@ -1,61 +1,5 @@
 <mvc:View controllerName="cf.cpl.controller.Master" xmlns="sap.m" xmlns:semantic="sap.f.semantic" xmlns:f="sap.f" xmlns:core="sap.ui.core"
 	xmlns:l="sap.ui.layout" xmlns:mvc="sap.ui.core.mvc">
-	<semantic:SemanticPage id="masterPage" preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop"
-		visible="true">
-		<semantic:titleHeading>
-			<VBox>
-				<Bar class="aTopBar">
-					<contentLeft>
-						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="5rem"/>
-					</contentLeft>
-					<contentMiddle>
-						<core:Icon src="sap-icon://e-learning"></core:Icon>
-						<Title text="Customer Price List"/>
-					</contentMiddle>
-					<contentRight>
-						<SearchField id="searchField" showRefreshButton="false" search="onGlobalSearch" width="100%">
-							<layoutData>
-								<OverflowToolbarLayoutData minWidth="150px" maxWidth="240px" shrinkable="true" priority="NeverOverflow"/>
-							</layoutData>
-						</SearchField>
-					</contentRight>
-				</Bar>
-					<Bar class="aTopBar">
-					<contentLeft>
-					<Label text=" " id="lblAccountNO" class="clssearchmenu"></Label>
-					</contentLeft>
-					
-				</Bar>
-				<!--Start of Pratik  04-11-2020 -->
-				<FlexBox alignItems="Start" class="sapUiDemoFlexBoxSizeAdjustmentsZeroWidthItems">
-					<Label text="Warehouse" class="clssearchmenu"></Label>
-					<ComboBox id="wh" items="{warehouses>/}" change="onWhChange" showSecondaryValues="true" class="sapUiSmallMargin">
-						
-						<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
-					</ComboBox>
-					<Label text="Sales Channel" class="clssearchmenu"></Label>
-					<ComboBox id="brand" items="{brandModel>/allChannel}" change="onBrandChange" class="sapUiSmallMargin">
-						<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
-					</ComboBox>
-					<Label text="Product Category" class="clssearchmenu"></Label>
-					<ComboBox id="prodCat" items="{local>/ProductCategory}" change="onCategoryChange" class="sapUiSmallMargin">
-						<core:Item key="{local>key}" text="{local>name}"/>
-					</ComboBox>
-					<ToolbarSpacer/>
-					<Button id="filterButton" press="onFilter" icon="sap-icon://filter" visible="false"></Button>
-					<Button text="Reset" type="Reject" press="onReset" class="sapUiSmallMarginTop"></Button>
-					<Button id="sortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false" class="sapUiSmallMarginTop"/>
-					<ToolbarSpacer/>
-					<Button id="addProductButton" press="onAddProduct" text="Add Product" enabled="true" class="sapUiSmallMarginTop"></Button>
-				</FlexBox>
-				<!-- End of Pratik changes -->
-				
-			</VBox>
-		</semantic:titleHeading>
-		<semantic:content>
-			<Table id="list" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true" visible="true" class="desktopTblCls"></Table>
-		</semantic:content>
-	</semantic:SemanticPage>
 	<semantic:SemanticPage id="masterPage2" preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop"
 		visible="false">
 		<!--Start of Pratik 04-11-2020 - 3277, 3255 -->
@@ -69,6 +13,11 @@
 						<core:Icon src="sap-icon://e-learning"></core:Icon>
 						<Title text="Customer Price List"/>
 					</contentRight>
+				</Bar>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<ObjectAttribute class="clsaccountmenu" title="Account" text="{editModelAccount>/accDetails/ACCOUNT_NAME__C} ( {editModelAccount>/accDetails/ACCOUNT__C} )"/>
+					</contentLeft>
 				</Bar>
 				<Bar class="aTopBar">
 					<contentLeft>
@@ -120,7 +69,7 @@
 									<OverflowToolbarLayoutData priority="High"/>
 								</layoutData>
 							</Button>
-							<Button id="sortButton2" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false" visible="true"/>
+							<Button id="sortButton2" press="onSortDialogForPhone" icon="sap-icon://sort" type="Transparent" enabled="false" visible="true"/>
 						</contentLeft>
 					</Bar>
 				</l:VerticalLayout>
@@ -130,17 +79,80 @@
 		<semantic:content>
 			<List id="list2" items="{listModel>/}" width="auto" class="sapFDynamicPageAlignContent" noDataText="No Data Available"
 				mode="{= ${device>/system/phone} ? 'None' : 'SingleSelectMaster'}" growing="true" growingScrollToLoad="true"
-				updateFinished=".onUpdateFinished" selectionChange=".onSelectionChange" visible="true">
+				updateFinished=".onUpdateFinished" growingThreshold="100" selectionChange=".onSelectionChange" visible="true">
 				<headerToolbar></headerToolbar>
 				<items>
-					<ObjectListItem type="Navigation" press=".onSelectionChange" intro="{listModel>intro}" title="{listModel>title}" number="{listModel>number}"
-						numberUnit="{listModel>numUnit}">
-						<firstStatus id="txtfirstStatus" visible="{device>/system/phone}" class="sapUiHideOnDesktop">
-							<ObjectStatus text="{listModel>firstStatus}" visible="{device>/system/phone}"/>
-						</firstStatus>
+						<ObjectListItem type="Active" press=".onSelectionChange" intro="Sell # : {listModel>Sell#}" title="Selling Style : {listModel>SellingStyle}" number=""
+						numberUnit="{listModel>numberUnit}">
+					
+						<ObjectAttribute title="Brand" text="{listModel>Brand}" visible="true" id="objAttrBrand"/>
+						<ObjectAttribute title="Weight" text="{listModel>Weight}" visible="true" id="objAttrWeight"/>
+						<ObjectAttribute title="{listModel>BillRoll}" text="${listModel>text}" visible="true" id="objattrRoll"/>
+						<ObjectAttribute  title="{listModel>BillCutLabel}" text="${listModel>BillCut}" visible="true" id="objattrText"/>
+						<ObjectAttribute title="Level" text="{listModel>Level}" visible="true" id="objAttrLevel"/>
+						<ObjectAttribute text="{listModel>CPLPriceID}" visible="false" />
 					</ObjectListItem>
 				</items>
 			</List>
 		</semantic:content>
 	</semantic:SemanticPage>
+	<semantic:SemanticPage id="masterPage" preserveHeaderStateOnScroll="false" toggleHeaderOnTitleClick="false" class="masterSemanticTop"
+		visible="true">
+		<semantic:titleHeading>
+			<VBox>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<Image src="https://mohawkind.com/_images/global/logo.svg" height="3rem" width="5rem"/>
+					</contentLeft>
+					<contentMiddle>
+						<core:Icon src="sap-icon://e-learning"></core:Icon>
+						<Title text="Customer Price List"/>
+					</contentMiddle>
+					<contentRight>
+						<SearchField id="searchField" showRefreshButton="false" search="onGlobalSearch" width="100%">
+							<layoutData>
+								<OverflowToolbarLayoutData minWidth="150px" maxWidth="240px" shrinkable="true" priority="NeverOverflow"/>
+							</layoutData>
+						</SearchField>
+					</contentRight>
+				</Bar>
+				<Bar class="aTopBar">
+					<contentLeft>
+						<ObjectAttribute class="clsaccountmenu" title="Account" text="{editModelAccount>/accDetails/ACCOUNT_NAME__C} ({editModelAccount>/accDetails/ACCOUNT__C})" />
+					</contentLeft>
+				</Bar>
+				<!--Start of Pratik  04-11-2020 -->
+				<FlexBox alignItems="Start" class="sapUiDemoFlexBoxSizeAdjustmentsZeroWidthItems">
+					<Label text="Warehouse" class="clssearchmenu"></Label>
+					<ComboBox id="wh" items="{warehouses>/}" change="onWhChange" showSecondaryValues="true" class="sapUiSmallMargin">
+						<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
+					</ComboBox>
+					<Label text="Sales Channel" class="clssearchmenu"></Label>
+					<ComboBox id="brand" items="{brandModel>/allChannel}" change="onBrandChange" class="sapUiSmallMargin">
+						<core:Item key="{brandModel>key}" text="{brandModel>channel}"/>
+					</ComboBox>
+					<Label text="Product Category" class="clssearchmenu"></Label>
+					<ComboBox id="prodCat" items="{local>/ProductCategory}" change="onCategoryChange" class="sapUiSmallMargin">
+						<core:Item key="{local>key}" text="{local>name}"/>
+					</ComboBox>
+					<ToolbarSpacer/>
+					<Button id="filterButton" press="onFilter" icon="sap-icon://filter" visible="false"></Button>
+					<Button text="Reset" type="Reject" press="onReset" class="sapUiSmallMarginTop"></Button>
+					<Button id="sortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="false" class="sapUiSmallMarginTop"/>
+					<ToolbarSpacer/>
+					<Button id="addProductButton" press="onAddProduct" text="Add New Product" enabled="false" class="sapUiSmallMarginTop"></Button>
+					<ToolbarSpacer/>
+					<Button id="submitButton" press="onSubmit" text="Submit" enabled="false" class="sapUiSmallMarginTop sapUiSmallMarginBegin"></Button>
+					<ToolbarSpacer/>
+					<Button id="multiPricing" press="onMultiprice" text="Multi Pricing" enabled="false" class="sapUiSmallMarginTop sapUiSmallMarginBegin"></Button>
+				</FlexBox>
+				<!-- End of Pratik changes -->
+				
+			</VBox>
+		</semantic:titleHeading>
+		<semantic:content>
+			<Table id="list" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true" visible="true" class="desktopTblCls"></Table>
+		</semantic:content>
+	</semantic:SemanticPage>
+	
 </mvc:View>

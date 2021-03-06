@@ -1,0 +1,15 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:l="sap.ui.layout" xmlns:f="sap.ui.layout.form"
+	xmlns:upload="sap.m.upload">
+	<Dialog title="Edit Price" titleAlignment="Center" horizontalScrolling="false" afterClose="afterCloseMultiPricingDialog">
+		<VBox>
+			<l:VerticalLayout class="sapUiContentPadding" width="100%">
+				<Button text="Edit Current Prices" width="100%" class="btnMultipricing" type="Emphasized" press="onPressbtnMultiPricing" ariaLabelledBy="editmultidialogLabel"/>
+				<Button text="Create Limited Time Prices" width="100%" class="btnMultipricing" type="Emphasized" press="onPressbtnMultiPricing" ariaLabelledBy="editmultidialogLabel"/>
+				<Button text="Remove Current Prices" width="100%" class="btnMultipricing" type="Emphasized" press="onPressbtnMultiPricing" ariaLabelledBy="editmultidialogLabel"/>
+			</l:VerticalLayout>
+		</VBox>
+		<buttons>
+			<Button text="Cancel" type="Reject" press="onCancelMultiPricingDialog"/>
+		</buttons>
+	</Dialog>
+</core:FragmentDefinition>

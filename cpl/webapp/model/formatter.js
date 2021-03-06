@@ -10,6 +10,7 @@ sap.ui.define([], function () {
 		 * @returns {string} formatted currency value with 2 digits
 		 */
 		currencyValue : function (sValue) {
+			console.log("formatter");
 			if (!sValue) {
 				return "";
 			}

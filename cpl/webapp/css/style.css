@@ -1,5 +1,6 @@
 /* Enter your custom styles here */
-div#container-cpl---master--masterPage-pageTitle-left-inner {
+div#container-cpl---master--masterPage-pageTitle-left-inner,
+div#container-cpl---multiedit--multieditPage-pageTitle-left-inner{
     width: 100%;
 }
 
@@ -8,11 +9,24 @@ div#container-cpl---master--masterPage-pageTitle-left-inner {
     width: 100%;
 }
 
-#container-cpl---master--list {
+#container-cpl---master--list,
+#container-cpl---multiedit--meList{
     /*height:500px;*/
     height: 100%;
     overflow: auto;
 }
+
+/*#container-cpl---multiedit--multieditPage-page-contentFitContainer {
+	position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+}*/
+
+/*.sapFDynamicPage-Std-Desktop-XL .multiPageContent {
+    padding: 1rem 3rem 0 3rem;
+}*/
 
 .clrBlue.sapMLabel {
     color: #4472c4;
@@ -157,3 +171,69 @@ div#container-cpl---master--masterPage-pageTitle-left-inner {
 .desktopTblCls .sapMListTbl {
 	table-layout: auto !important;
 }
+
+.addProductBar, .apVBox {
+	height: 6rem !important;
+}
+.addProductBar .sapMBarLeft, .addProductBar .sapMBarRight, .addProductBar .sapMBarPH {
+    height: 6rem !important;
+    top: 1rem;
+}
+
+/*Start of Multi Edit Price */
+
+.btnMultipricing span.sapMBtnInner.sapMBtnEmphasized {
+    background-color: #F9473A !important;
+}
+
+.clslblbar1 {
+    padding: 40px;
+    font-weight: bold;
+    font-size: 20px;
+    color: black;
+    background-color: lightgrey;
+}
+
+.clsbar1
+{
+	box-shadow: none;
+	margin-bottom:10px;
+}
+
+.btndecrement span.sapMBtnInner.sapMBtnReject
+{
+	background-color: #F9473A !important;
+	color:white !important;
+	font-weight:bold;
+}
+
+.sapMBtn:hover>.sapMBtnHoverable.sapMBtnAccept:not(.sapMBtnActive):not(.sapMToggleBtnPressed) bdi
+{
+	color:white !important;
+}
+.sapMBtn:hover>.sapMBtnHoverable.sapMBtnReject:not(.sapMBtnActive):not(.sapMToggleBtnPressed) bdi
+{
+	color:white !important;
+}
+
+.btnincrement span.sapMBtnInner.sapMBtnAccept
+{
+	background-color: #548236 !important;
+	color:white !important;
+	font-weight:bold;
+}
+
+.tlTitleFont .sapMText {
+    font-size: 1.4rem;
+    color: #000;
+    font-weight: bold;
+}
+
+.clsaccountmenu {
+    padding-top: 15px !important;
+}
+.clsaccountmenu.sapMObjectAttributeDiv .sapMText, .sapMObjectAttributeDiv .sapMObjectAttributeTitle, .sapMObjectAttributeDiv .sapMObjectAttributeColon, .sapMObjectAttributeDiv .sapMObjectAttributeText
+{
+	  font-size:12px !important;
+}
+/*End of Multi Edit Price */

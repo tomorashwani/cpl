@@ -37,13 +37,18 @@ sap.ui.define([
 
 			var lModel = new JSONModel(this.productCategory());
 			this.getView().setModel(lModel, "local");
-			this.getView().byId("apProdCat").setModel(lModel, "local");
+			// this.getView().byId("apProdCat").setModel(lModel, "local");
+			 var that = this;
+			
+				that.EditAcessmeta = sap.ui.getCore().getModel("configModel").getProperty("/EditAccessmeta");
 		},
 
 		onAfterRendering: function () {
+				this.bindAPRecords();
 
-			this.getView().byId("apWH").setModel(sap.ui.getCore().getModel("configModel"), "warehouses");
-			this.getView().byId("apBrand").setModel(sap.ui.getCore().getModel("configModel"), "brandModel");
+
+			// this.getView().byId("apWH").setModel(sap.ui.getCore().getModel("configModel"), "warehouses");
+			// this.getView().byId("apBrand").setModel(sap.ui.getCore().getModel("configModel"), "brandModel");
 
 		},
 
@@ -60,6 +65,35 @@ sap.ui.define([
 				this.getView().byId("masterPage2").setVisible(true);
 				this.getView().byId("masterPage").setVisible(false);
 			}*/
+			// this.concatDataFlag = true;
+			sap.ui.getCore().getModel("configModel").setProperty("/concatDataFlag", true);
+			this.selectedCat = sap.ui.getCore().getModel("configModel").getProperty("/selectedCat");
+			// Start by <JAYANT PRAKASH> for <5081>
+			if (this.selectedCat === "Resilient Tile & Plank" ) 
+			{
+				sap.ui.getCore().getModel("configModel").setProperty("/selectedCat", "Resilient Tile");
+				this.selectedCat = sap.ui.getCore().getModel("configModel").getProperty("/selectedCat");
+			} //End by <JAYANT PRAKASH> for <5081>
+			if (this.selectedCat === "Resilient Tile") {
+				sap.ui.getCore().getModel("configModel").setProperty("/selectedCat", "Resilient Tile & Plank");
+			}
+			this.selectedWH = sap.ui.getCore().getModel("configModel").getProperty("/selectedWH");
+			this.selectedChannel = sap.ui.getCore().getModel("configModel").getProperty("/selectedChannel");
+			this.loggedInUser = sap.ui.getCore().getModel("configModel").getProperty("/loggedInUser");
+
+			this.getView().setModel(sap.ui.getCore().getModel("configModel"), "addProductModel");
+
+			var searchParam = document.location.href.split("?");
+			if (searchParam.length > 1) {
+				if (searchParam[1].split("#").length > 0) {
+					var newSearch = searchParam[1].split("#");
+					var accNo = "";
+					accNo = newSearch[0].split("=")[1];
+					accNo = accNo.includes("#") ? accNo.replace("#", '') : accNo;
+					this.accNo = accNo;
+				}
+			}
+			this.fetchAddProducts();
 		},
 
 		onBypassed: function () {},
@@ -67,6 +101,7 @@ sap.ui.define([
 		fetchAddProducts: function () {
 			// console.log("Fetch Add Product");
 			var brand = sap.ui.getCore().getModel("configModel").getProperty("/allBrand");
+			this.brCode = sap.ui.getCore().getModel("configModel").getProperty("/brCode");
 
 			if (this.selectedChannel !== "" && this.selectedChannel !== null && this.selectedChannel !== undefined && this.selectedCat !==
 				undefined && this.selectedWH !== undefined && this.selectedWH !== null) {
@@ -84,7 +119,7 @@ sap.ui.define([
 				this.getView().setModel(apViewModel, "apViewModel");
 
 				var viewName = "CPLAddProductView";
-				
+
 				var url = "pricing/" + viewName + ".xsjs";
 
 				if (this.accNo === "" || this.accNo === undefined) {
@@ -114,8 +149,27 @@ sap.ui.define([
 						async: false,
 						data: JSON.stringify(payload),
 						success: function (response) {
-							console.log(response);
-							apViewModel.setData(response);
+							var data = response.results;
+							console.log(data);
+							
+							var editableData = [];
+							if (that.brCode && that.brCode.length > 0) {
+								var g = that;
+								editableData = data.filter(function (a) {
+									for (var n = 0; n < g.brCode.length; n++) {
+										if (a.ERP_PRODUCT_TYPE__C === g.brCode[n].proCode && a.BRAND_CODE__C === g.brCode[n].brand) {
+											return a;
+										}
+									}
+								});
+							}
+							for (var i = 0; i < editableData.length; i++) {
+								editableData[i].NAME = editableData[i].PRODUCT_NAME__C;
+							}
+
+							that.SortByName(editableData);
+
+							apViewModel.setData(editableData);
 							sap.ui.getCore().setModel(apViewModel, "apViewModel");
 							that.getView().setModel(apViewModel, "apViewModel");
 							that.bindAPRecords();
@@ -130,58 +184,38 @@ sap.ui.define([
 
 		bindAPRecords: function () {
 			var pViewData = this.getView().getModel("apViewModel").getData();
-			// var oAccountDetails = this.getView().byId("lblAccountNO");
-			// if (this.selectedCat === "Cushion") {
-			// if(pViewData.length > 0) {
-			// oAccountDetails.setText(pViewData[0].ACCOUNT_NAME__C + " (" + pViewData[0].ACCOUNT__C + ")");
-			// }
-			// } else {
-			// oAccountDetails.setText("");
-			// }
-
 			var oTable = this.getView().byId("productList");
 			oTable.removeAllItems();
 			oTable.removeAllColumns();
 
 			var tHeader = [];
 			this.gridmeta = sap.ui.getCore().getModel("configModel").getData();
-			this.primaryCols = this.gridmeta.filter((a) => (a['PRODUCT_CATEGORY__C'] == this.selectedCat && a.IS_ADD_PRODUCT__C == "X")).sort(
+			this.addPrimaryCols = this.gridmeta.filter((a) => (a['PRODUCT_CATEGORY__C'] == this.selectedCat && a.IS_ADD_PRODUCT__C == "X")).sort(
 				this.sortGridMeta);
 
-			// added for Menu Button Header.. 
-			if (this.primaryCols.length > 0) {
+			for (var i = 0; i < this.addPrimaryCols.length; i++) {
 				var oColumn = new sap.m.Column({
 					header: new sap.m.Label({
-						text: ""
-					})
-				});
-				oTable.addColumn(oColumn);
-			}
-			for (var i = 0; i < this.primaryCols.length; i++) {
-				var oColumn = new sap.m.Column({
-					header: new sap.m.Label({
-						text: this.primaryCols[i]['SHORT_LABEL__C']
+						text: this.addPrimaryCols[i]['SHORT_LABEL__C']
 					})
 				});
 				oTable.addColumn(oColumn);
 				var tData = {
-					"key": this.primaryCols[i].ADD_PRODUCT_SORT_ORDER__C,
-					"header": this.primaryCols[i].SHORT_LABEL__C,
-					"field": this.primaryCols[i].FIELD_API_NAME__C.toUpperCase(),
-					"type": this.primaryCols[i].DATA_TYPE__C
+					"key": this.addPrimaryCols[i].ADD_PRODUCT_SORT_ORDER__C,
+					"header": this.addPrimaryCols[i].SHORT_LABEL__C,
+					"field": this.addPrimaryCols[i].FIELD_API_NAME__C.toUpperCase(),
+					"type": this.addPrimaryCols[i].DATA_TYPE__C
 				};
 				tHeader.push(tData);
 			}
 
-			sap.ui.getCore().getModel("configModel").setProperty("/mHeader", tHeader);
-			sap.ui.getCore().getModel("configModel").setProperty("/selectedCat", this.selectedCat);
+			sap.ui.getCore().getModel("configModel").setProperty("/apHeader", tHeader);
 
 			var numberFields = tHeader.filter(function (c) {
 				if (c.type === "Currency") {
 					return c;
 				}
 			});
-
 			var dateFields = tHeader.filter(function (d) {
 				if (d.type === "Date") {
 					return d;
@@ -215,93 +249,410 @@ sap.ui.define([
 
 			var oCell = [];
 
-			//tHeader.sort(that.sortTHeader);
 			for (var j = 0; j < tHeader.length; j++) {
 				if (tHeader[j].type === "Currency") {
 					var cell1 = new sap.m.Text({
-						text: "$ " + "{pViewModel>" + tHeader[j].field.replace('PRODUCT__R.', '') + "}"
+						text: "$ " + "{apViewModel>" + tHeader[j].field.replace('PRODUCT__R.', '') + "}"
 					});
 					oCell.push(cell1);
 				} else {
 					var cell1 = new sap.m.Text({
-						text: "{pViewModel>" + tHeader[j].field.replace('PRODUCT__R.', '') + "}"
+						text: "{apViewModel>" + tHeader[j].field.replace('PRODUCT__R.', '') + "}"
 					});
 					oCell.push(cell1);
 				}
 			}
 
-			//changes for Sorting by Blue color 
-			var that = this;
-			if (pViewData.length > 0) {
+			var aColList = new sap.m.ColumnListItem({
+				cells: oCell
+					//	type: "Navigation",
+					//	press: [this.onSelectionChange, this]
+			});
+			oTable.bindItems("apViewModel>/", aColList);
+			//Added by diksha for lock pricing //
+				var header = oTable.$().find('thead');
+				var that = this;
+			oTable.getItems().forEach(function (r) {
+			
+				var obj = r.getBindingContext("apViewModel").getObject();
+				var oStatus = obj.APPROVAL_STATUS__C;
+				var loggedIn = obj.MODIFIED_BY__C;
+				var editAccess = obj.EDITACCESS;
+				var cb = r.$().find('.sapMCb');
+				var oCb = sap.ui.getCore().byId(cb.attr('id'));
+				
+			
+				if (that.EditAcessmeta.length > 0) {
+						for (var i = 0; i < that.EditAcessmeta.length; i++) {
+							
+										if (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat  && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+									that.EditAcessmeta[i].BRAND_CODE__C === null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+								if (oCb) {
+									oCb.setVisible(false);
+								//	that.CheckAll.setVisible(false);
+								
+								}
 
-				for (var i = 0; i < oTable.getModel("pViewModel").getData().length; i++) {
-					if ((oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "1" || oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C ==
-							"4") && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C == that.loggedInUser) {
-						for (var j = 0; j < oTable.getItems().length; j++) {
-							if (i == j) {
-								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
-									oTable.getItems()[j].getCells()[k].addStyleClass("clrBlue");
+							} else if ((that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat ) && (that.EditAcessmeta[i].BRAND_CODE__C !==
+									"" ||
+									that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+
+								if (that.EditAcessmeta[i].BRAND_CODE__C === obj.BRAND_CODE__C) {
+									//	oMenuBtn.setEnabled(false);
+									if (oCb) {
+										oCb.setVisible(false);
+									//		that.CheckAll.setVisible(false);
+									}
 								}
-							}
-						}
-					} else if ((oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "2" || oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C ==
-							"3") && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C == that.loggedInUser) {
-						for (var j = 0; j < oTable.getItems().length; j++) {
-							if (i == j) {
-								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
-									oTable.getItems()[j].getCells()[k].addStyleClass("clrRed");
+
+							} else if ((that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat ) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !==
+									"" ||
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+									that.EditAcessmeta[i].BRAND_CODE__C === null)) {
+
+								if (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === obj.ERP_PRODUCT_TYPE__C) {
+									//	oMenuBtn.setEnabled(false);
+									if (oCb) {
+										oCb.setVisible(false);
+										//	that.CheckAll.setVisible(false);
+									}
 								}
-							}
-						}
-					} else if (oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "A" && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C ==
-						that.loggedInUser) {
-						for (var j = 0; j < oTable.getItems().length; j++) {
-							if (i == j) {
-								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
-									oTable.getItems()[j].getCells()[k].addStyleClass("clrGreen");
+
+							} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" || that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[
+										i]
+									.SALESFORCE_PRODUCT_CATEGORY__C === "" ||
+									that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+
+								if (that.EditAcessmeta[i].BRAND_CODE__C === obj.BRAND_CODE__C) {
+									//	oMenuBtn.setEnabled(false);
+									if (oCb) {
+										oCb.setVisible(false);
+										//	that.CheckAll.setVisible(false);
+									}
 								}
-							}
-						}
-					} else if (oTable.getModel("pViewModel").getData()[i].APPROVAL_STATUS__C == "F" && oTable.getModel("pViewModel").getData()[i].MODIFIED_BY__C ==
-						that.loggedInUser) {
-						for (var j = 0; j < oTable.getItems().length; j++) {
-							if (i == j) {
-								for (var k = 0; k < oTable.getItems()[j].getCells().length; k++) {
-									oTable.getItems()[j].getCells()[k].addStyleClass("clrPurple");
+
+							} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" && that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[
+										i]
+									.ERP_PRODUCT_TYPE__C !== "" &&
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === "" || that.EditAcessmeta[
+									i].SALESFORCE_PRODUCT_CATEGORY__C === null)) {
+
+								if ((that.EditAcessmeta[i].BRAND_CODE__C === obj.BRAND_CODE__C) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C ===
+									obj.ERP_PRODUCT_TYPE__C)) {
+									//	oMenuBtn.setEnabled(false);
+									if (oCb) {
+										oCb.setVisible(false);
+										//	that.CheckAll.setVisible(false);
+									}
 								}
+
+							} else if ((that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !==
+									"" ||
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+									that.EditAcessmeta[i].BRAND_CODE__C === null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === "" || that.EditAcessmeta[
+									i].SALESFORCE_PRODUCT_CATEGORY__C === null)) {
+
+								if (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === obj.ERP_PRODUCT_TYPE__C) {
+									//	oMenuBtn.setEnabled(false);
+									if (oCb) {
+										oCb.setVisible(false);
+										//	that.CheckAll.setVisible(false);
+									}
+								}
+
+							} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" && that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[
+										i]
+									.ERP_PRODUCT_TYPE__C !== "" &&
+									that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat  ||
+									that.EditAcessmeta[
+										i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat )) {
+								if (oCb) {
+									oCb.setVisible(false);
+									//	that.CheckAll.setVisible(false);
+								}
+
+							
 							}
+								
+
+						
+
 						}
 					}
+			});
+		},
+
+		onAPSearch: function (oEvent) {
+			if (oEvent.getParameters().refreshButtonPressed) {
+				// Search field's 'refresh' button has been pressed.
+				// This is visible if you select any master list item.
+				// In this case no new search is triggered, we only
+				// refresh the list binding.
+				this.onAPRefresh();
+				return;
+			}
+
+			var header = sap.ui.getCore().getModel("configModel").getProperty("/apHeader");
+			var width = this.getView()._oContextualSettings.contextualWidth;
+			if (width > 700) {
+				var f0 = header[0].field.includes("PRODUCT__R.") ? header[0].field.replace("PRODUCT__R.", "") : header[0].field;
+				var f1 = header[1].field.includes("PRODUCT__R.") ? header[1].field.replace("PRODUCT__R.", "") : header[1].field;
+				var f2 = header[2].field.includes("PRODUCT__R.") ? header[2].field.replace("PRODUCT__R.", "") : header[2].field;
+				var f3 = header[3].field.includes("PRODUCT__R.") ? header[3].field.replace("PRODUCT__R.", "") : header[3].field;
+				var f4 = header[4].field.includes("PRODUCT__R.") ? header[4].field.replace("PRODUCT__R.", "") : header[4].field;
+			}
+			/*else {
+				var f0 = "intro";
+				var f1 = "title";
+				var f2 = "number";
+				var f3 = "numUnit";
+			}*/
+			var aFilters = [];
+			var sQuery = oEvent.getParameter("query");
+			if (sQuery && sQuery.length > 0) {
+				var filter1 = new Filter(f0, FilterOperator.Contains, sQuery);
+				var filter2 = new Filter(f1, FilterOperator.Contains, sQuery);
+				var filter3 = new Filter(f2, FilterOperator.Contains, sQuery);
+				var filter4 = new Filter(f3, FilterOperator.Contains, sQuery);
+				var filter5 = new Filter(f4, FilterOperator.Contains, sQuery);
+				aFilters.push(filter1, filter2, filter3, filter4, filter5);
+
+				var oFilter = new Filter(aFilters);
+
+				var oList = this.byId("productList");
+				var oBinding = oList.getBinding("items");
+				oBinding.filter(oFilter, "Application");
+			} else {
+				//Start of changes by <JAYANT PRAKASH> for <5243>
+				//this.bindRecords();
+				this.bindAPRecords();
+				//End of changes by <JAYANT PRAKASH> for <5243>
+			}
+
+		},
+
+		onAPRefresh: function () {
+			this.byId("productList").getBinding("items").refresh();
+			// this.setModel(this.oModel, "MasterModel");
+			// this.getModel("MasterModel").refresh();
+		},
+
+		/*onAPSortDialog: function (oEvent) {
+			var sDialogTab = "sort";
+
+			var headerData = sap.ui.getCore().getModel("configModel").getProperty("/apHeader");
+
+			// load asynchronous XML fragment
+			if (!this.sortDialog) {
+				this.sortDialog = sap.ui.xmlfragment("cf.cpl.fragments.ViewSettingsDialog", this);
+				this.getView().addDependent(this.sortDialog);
+				for (var i = 0; i < headerData.length; i++) {
+					if (headerData[i].header !== "") { 
+						headerData[i].field = headerData[i].field.includes("PRODUCT__R.") ? headerData[i].field.replace("PRODUCT__R.", "") :
+							headerData[
+								i]
+							.field;
+						var oCustomSortItem = new sap.m.ViewSettingsItem({
+							key: headerData[i].field,
+							text: headerData[i].header
+						});
+						this.sortDialog.addSortItem(oCustomSortItem);
+					}
+				}
+
+				if (Device.system.desktop) {
+					this.sortDialog.addStyleClass("sapUiSizeCompact");
 				}
 			}
-			//changes for Sorting by Blue color
+			this.sortDialog.open();
+		},*/
 
-			/*
-						var listFilter = tHeader.filter(function (a) {
-							return a.key == "1" || a.key == "2" || a.key == "3" || a.key == "4" || a.key == tHeader.length - 1 + "";
-						});
-						var lData = [];
-						if (listFilter.length > 0) {
-							for (var k = 0; k < pViewData.length; k++) {
-								var f0 = listFilter[0].field.replace('PRODUCT__R.', '');
-								var f1 = listFilter[1].field.replace('PRODUCT__R.', '');
-								var f2 = listFilter[2].field.replace('PRODUCT__R.', '');
-								var f3 = listFilter[3].header + ":" + listFilter[3].field.replace('PRODUCT__R.', '');
-								var f4 = listFilter[4].header + ":" + listFilter[4].field.replace('PRODUCT__R.', ''); //  Added by Ronak; Date: 17-Dec-2020; Bug: 3906; For BILLING_PRICE_CUT__C
-								var data = {
-									"intro": pViewData[k][f2],
-									"title": pViewData[k][f1],
-									"number": pViewData[k][f0],
-									"numUnit": pViewData[k][f3],
-									"firstStatus": pViewData[k][f4]
-								};
-								lData.push(data);
+		onAddToList: function (oEvent) {
+			var oTable = this.getView().byId("productList");
+			var selectedRecords = oTable.getSelectedItems();
+			var apData = this.getView().getModel("apViewModel").getData();
+			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
+				pattern: "yyyy-MM-dd"
+			});
+
+			var payload = [];
+			if (selectedRecords.length > 0) {
+				for (var i = 0; i < selectedRecords.length; i++) {
+					var selectedPath = selectedRecords[i].getBindingContext("apViewModel").getPath();
+					var path = selectedPath.slice(1, selectedPath.length);
+					var records = {
+						"Accountno": this.accNo,
+						"Productuniquekey": apData[path].PRODUCT_UNIQUE_KEY__C,
+						"Whcode": apData[path].WAREHOUSE_CODE__C,
+						"Brandcode": apData[path].BRAND_CODE__C,
+						"Productcategory": apData[path].SALESFORCE_PRODUCT_CATEGORY__C,
+						"Cplrecordid": new Date().getTime().toString() + (Math.floor(Math.random() * (100000 - 9999)) + 9999),
+						"Startdate": dateFormat.format(new Date()),
+						"Enddate": "4000-12-31",
+						"Createddatetime": dateFormat.format(new Date()),
+						"Modifieddatetime": dateFormat.format(new Date()),
+						"Approvalstatus": "1",
+						"Modifiedby": this.loggedInUser
+					};
+					payload.push(records);
+				}
+			} else {
+				MessageBox.error("Please select at least one product");
+				return;
+			}
+
+			var addProdURL = "";
+			switch (this.selectedCat) {
+			case "Residential Broadloom":
+				addProdURL = "pricing/CPLAddProductRB.xsjs";
+				break;
+			case "Resilient Tile":
+				addProdURL = "pricing/CPLAddProductRT.xsjs";
+				break;
+			case "RevWood":
+				addProdURL = "pricing/CPLAddProductRW.xsjs";
+				break;
+			case "Carpet Tile":
+				addProdURL = "pricing/CPLAddProductCT.xsjs";
+				break;
+			case "Commercial Broadloom":
+				addProdURL = "pricing/CPLAddProductCB.xsjs";
+				break;
+			case "Cushion":
+				addProdURL = "pricing/CPLAddProductCushion.xsjs";
+				break;
+			case "TecWood":
+				addProdURL = "pricing/CPLAddProductTW.xsjs";
+				break;
+			case "SolidWood":
+				addProdURL = "pricing/CPLAddProductSW.xsjs";
+				break;
+			case "Resilient Sheet":
+				addProdURL = "pricing/CPLAddProductRS.xsjs";
+				break;
+			case "Tile":
+				addProdURL = "pricing/CPLAddProductTile.xsjs";
+				break;
+			case "Accessories":
+				addProdURL = "pricing/CPLAddProductAcc.xsjs";
+				break;
+			default:
+				addProdURL = "";
+				break;
+			}
+			var that = this;
+			$.ajax({
+				url: addProdURL,
+				contentType: "application/json",
+				method: "POST",
+				async: false,
+				data: JSON.stringify(payload),
+				success: function (response) {
+					console.log(response);
+					sap.ui.getCore().getModel("configModel").setProperty("/concatDataFlag", true);
+					that.onNavBack();
+				},
+				error: function (err) {
+					console.log(err);
+				}
+			});
+
+		},
+		
+		//Added by Diksha 3/2/2021 for lock pricng//
+			onProductSelect: function (oEvent) {
+			var that = this;
+			var oTable = this.getView().byId("productList");
+			var header = oTable.$().find('thead');
+			oTable.getItems().forEach(function (r) {
+				
+				var obj = r.getBindingContext("apViewModel").getObject();
+				var oStatus = obj.APPROVAL_STATUS__C;
+				var loggedIn = obj.MODIFIED_BY__C;
+			
+			
+					if (that.EditAcessmeta.length > 0) {
+					for (var i = 0; i < that.EditAcessmeta.length; i++) {
+						
+									if (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat  && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+								that.EditAcessmeta[i].BRAND_CODE__C === null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+							r.setSelected(false);
+						} else if ((that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat ) && (that.EditAcessmeta[i].BRAND_CODE__C !==
+								"" ||
+								that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+
+							if (that.EditAcessmeta[i].BRAND_CODE__C === obj.BRAND_CODE__C) {
+								//	oMenuBtn.setEnabled(false);
+								r.setSelected(false);
 							}
-						}*/
-			// var lsModel = new JSONModel();
 
-			// lsModel.setData(lData);
-			// this.getView().setModel(lsModel, "listModel");
+						} else if ((that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat ) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !==
+								"" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+								that.EditAcessmeta[i].BRAND_CODE__C === null)) {
+
+							if (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === obj.ERP_PRODUCT_TYPE__C) {
+								//	oMenuBtn.setEnabled(false);
+									r.setSelected(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" || that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[
+									i]
+								.SALESFORCE_PRODUCT_CATEGORY__C === "" ||
+								that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+
+							if (that.EditAcessmeta[i].BRAND_CODE__C === obj.BRAND_CODE__C) {
+								//	oMenuBtn.setEnabled(false);
+									r.setSelected(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" && that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[
+									i]
+								.ERP_PRODUCT_TYPE__C !== "" &&
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === "" || that.EditAcessmeta[
+								i].SALESFORCE_PRODUCT_CATEGORY__C === null)) {
+
+							if ((that.EditAcessmeta[i].BRAND_CODE__C === obj.BRAND_CODE__C) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C ===
+								obj.ERP_PRODUCT_TYPE__C)) {
+								//	oMenuBtn.setEnabled(false);
+									r.setSelected(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !==
+								"" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+								that.EditAcessmeta[i].BRAND_CODE__C === null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === "" || that.EditAcessmeta[
+								i].SALESFORCE_PRODUCT_CATEGORY__C === null)) {
+
+							if (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === obj.ERP_PRODUCT_TYPE__C) {
+								//	oMenuBtn.setEnabled(false);
+									r.setSelected(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" && that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[
+									i]
+								.ERP_PRODUCT_TYPE__C !== "" &&
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat  ||
+								that.EditAcessmeta[
+									i].SALESFORCE_PRODUCT_CATEGORY__C === that.selectedCat )) {
+							r.setSelected(false);
+
+						
+
+						}
+							
+
+					
+
+					}
+				}
+			});
 		},
 	});
 

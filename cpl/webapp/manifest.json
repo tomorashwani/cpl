@@ -99,6 +99,11 @@
 					"pattern": "AddProduct",
 					"name": "addProduct",
 					"target": "addProduct"
+				},
+				{
+					"pattern": "MultiEdit",
+					"name": "multiEdit",
+					"target": "multiEdit"
 				}
 			],
 			"targets": {
@@ -124,7 +129,13 @@
 				},
 				"addProduct": {
 					"viewType": "XML",
-					"viewName": "AddProduct"
+					"viewName": "AddProduct",
+					"viewId": "addproduct"
+				},
+				"multiEdit": {
+					"viewType": "XML",
+					"viewName": "MultiEdit",
+					"viewId": "multiedit"
 				}
 			}
 		}

@@ -24,8 +24,23 @@
 						</SearchField>
 					</contentRight>
 				</Bar>
+				<Bar class="addProductBar">
+					<contentLeft>
+						<VBox class="apVBox">
+							<ObjectAttribute title="Product Category" text="{addProductModel>/selectedCat}" active="false" class="tlTitleFont"/>
+							<ObjectAttribute title="Account" text="{addProductModel>/accDetails/ACCOUNT_NAME__C} ({addProductModel>/accDetails/ACCOUNT__C})" active="false" class="tlTitleFont"/>
+							<!--<ObjectAttribute title="Account Number" text="{addProductModel>/accDetails/ACCOUNT__C}" active="false"/>-->
+						</VBox>
+					</contentLeft>
+					<contentRight>
+						<!--<Button id="apFilterButton" press="onAPFilter" icon="sap-icon://filter" visible="true" class="sapUiSmallMarginTop"></Button>-->
+						<Button id="apSortButton" press="onSortDialog" icon="sap-icon://sort" type="Transparent" enabled="true" visible="true" class="sapUiSmallMarginTop" />
+						<Button text="Cancel" type="Reject" press="onNavBack" class="sapUiSmallMarginTop"></Button>
+						<Button text="Add Product to List" type="Emphasized" press="onAddToList" class="sapUiSmallMarginTop sapUiSmallMarginBegin"></Button>
+					</contentRight>
+				</Bar>
 				<FlexBox alignItems="Start">
-					<Label text="Warehouse" class="clssearchmenu"></Label>
+					<!--<Label text="Warehouse" class="clssearchmenu"></Label>
 					<ComboBox id="apWH" items="{warehouses>/wh}" change="onWhChange" showSecondaryValues="true" class="sapUiSmallMargin">
 						<core:ListItem key="{warehouses>WAREHOUSE_CODE__C}" text="{warehouses>WAREHOUSE_CODE__C}" additionalText="{warehouses>WAREHOUSE_CODE__DESC}"/>
 					</ComboBox>
@@ -36,16 +51,18 @@
 					<Label text="Product Category" class="clssearchmenu"></Label>
 					<ComboBox id="apProdCat" items="{local>/ProductCategory}" change="onCategoryChange" class="sapUiSmallMargin">
 						<core:Item key="{local>key}" text="{local>name}"/>
-					</ComboBox>
-					<ToolbarSpacer/>
+					</ComboBox>-->
+					<!--<ToolbarSpacer/>
 					<Button id="apFilterButton" press="onFilter" icon="sap-icon://filter" visible="false"></Button>
 					<Button text="Reset" type="Reject" press="onReset" class="sapUiSmallMarginTop"></Button>
+					<ToolbarSpacer/>
+					<Button text="Add Product to List" type="Emphasized" press="onAddToList" class="sapUiSmallMarginTop sapUiSmallMarginBegin"></Button>-->
 				</FlexBox>
 			</VBox>
 		</semantic:titleHeading>
 		<semantic:content>
-			<Table id="productList" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true" visible="true"
-				class="desktopTblCls"></Table>
+			<Table id="productList" inset="false" growing="true" growingThreshold="100" growingScrollToLoad="true" alternateRowColors="true"
+				visible="true" mode="MultiSelect" class="desktopTblCls" select="onProductSelect"></Table>
 		</semantic:content>
 	</semantic:SemanticPage>
 	<!--</content>

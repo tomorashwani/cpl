@@ -111,8 +111,8 @@ sap.ui.define([
 			var localData = this.getOwnerComponent().getModel("local").getData();
 			this.filterData = localData.FilterMapping;
 
-			this.getView().byId("masterPage2").setVisible(false);
 			this.getView().byId("masterPage").setVisible(true);
+			this.getView().byId("masterPage2").setVisible(false);
 
 			// this.user = 'Ashley Nalley';
 			var that = this;
@@ -140,6 +140,54 @@ sap.ui.define([
 					sap.ui.getCore().busyIndicator.close();
 				}
 			});
+
+			//Added by Diksha story -1948 //
+
+			$.ajax({
+				url: "pricing/PriceGrid.xsodata/CPLEditSetting",
+				contentType: "application/json",
+				type: 'GET',
+				dataType: "json",
+				async: false,
+				success: function (response) {
+					that.EditAcessmeta = response.d.results;
+					sap.ui.getCore().getModel("configModel").setProperty("/EditAccessmeta", that.EditAcessmeta);
+
+					/*	var oModel = new JSONModel(that.EditAcessmeta);
+						sap.ui.getCore().setModel(oModel, "configModel");
+						sap.ui.getCore().getModel("configModel").setData(that.EditAcessmeta);
+						sap.ui.getCore().busyIndicator.close();*/
+
+				},
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
+			});
+
+			//Start of changes by diksha -story 3999 //
+			//Catalogue service for Mobile --Filter by GRID_TYPE and IS_AVAILABLE_ON_MOBILE__C //
+			var data = "X";
+
+			$.ajax({
+				url: "pricing/PriceGrid.xsodata/Catalogue?$filter=GRID_TYPE eq '" + appName + "' + and + IS_AVAILABLE_ON_MOBILE__C eq '" +
+					data + "' ",
+				contentType: "application/json",
+				type: 'GET',
+				dataType: "json",
+				async: false,
+				success: function (response) {
+					that.gridmetaMobile = response.d.results;
+					//	that.gridmetaMobile.sort(that.sortGridMeta);
+					var oModel = new JSONModel(that.gridmetaMobile);
+					sap.ui.getCore().setModel(oModel, "configModelMobile");
+					sap.ui.getCore().busyIndicator.close();
+				},
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
+			});
+
+			//End of changes by diksha //
 
 			// Get Account Number
 			var whURL = "pricing/PriceGrid.xsodata/Account";
@@ -186,7 +234,7 @@ sap.ui.define([
 						"WAREHOUSE_CODE__C": "",
 						"WAREHOUSE_CODE__DESC": ""
 					});
-					
+
 					var oModel = new JSONModel(that.warehouses);
 					that.byId("wh").setModel(oModel, "warehouses");
 					that.byId("wh2").setModel(oModel, "warehouses");
@@ -245,8 +293,8 @@ sap.ui.define([
 					sap.ui.getCore().getModel("configModel").setProperty("/allChannel", salesChnl);
 					sap.ui.getCore().getModel("configModel").setProperty("/allBrand", brand);
 
-					that.getView().byId("masterPage2").setVisible(false);
-					that.getView().byId("masterPage").setVisible(true);
+					// that.getView().byId("masterPage2").setVisible(false);
+					// that.getView().byId("masterPage").setVisible(true);
 					sap.ui.getCore().busyIndicator.close();
 				},
 				error: function (error) {
@@ -254,7 +302,7 @@ sap.ui.define([
 				}
 			});
 
-			sap.ui.getCore().busyIndicator.open();
+			/*sap.ui.getCore().busyIndicator.open();
 			$.ajax({
 				url: "pricing/PriceGrid.xsodata/PromoCode?$format=json",
 				contentType: "application/json",
@@ -271,7 +319,9 @@ sap.ui.define([
 				error: function (error) {
 					sap.ui.getCore().busyIndicator.close();
 				}
-			});
+			});*/
+
+			this.getAccountDetails(this.accNo);
 
 		},
 
@@ -284,6 +334,7 @@ sap.ui.define([
 			}).done(function (data, status, jqxhr) {
 				console.log(data);
 				that.loggedInUser = data;
+				sap.ui.getCore().getModel("configModel").setProperty("/loggedInUser", that.loggedInUser);
 				var g = that;
 				$.ajax({
 					url: "pricing/PriceGrid.xsodata/UserRole?$filter=EMAILID eq '" + data + "'",
@@ -295,6 +346,7 @@ sap.ui.define([
 						if (response.d.results.length > 0) {
 							that.userRole = response.d.results[0].ROLE;
 							g.empNo = response.d.results[0].EMPLOYEENUMBER;
+							g.empRole = response.d.results[0].ROLE;
 							g._getTerritoryUser(g.empNo);
 						}
 						sap.ui.getCore().getModel("configModel").setProperty("/userRole", that.userRole);
@@ -305,9 +357,11 @@ sap.ui.define([
 					}
 				});
 			});
+			
+			var timeOffSet = this.getTimeZone();
+			sap.ui.getCore().getModel("configModel").setProperty("/timeOffSet", timeOffSet);
 
 			// this.loggedInUser = "Saradha_Varadharajan@mohawkind.com";
-
 
 			$("#container-cpl---master--list").on('scroll', {
 				g: this
@@ -316,18 +370,22 @@ sap.ui.define([
 			this.getView().setModel(lsModel, "listModel");
 			var pViewModel = new JSONModel();
 			this.getView().setModel(pViewModel, "pViewModel");
-			this._filterDisable();
+			// this._filterDisable();
 
 			var priceModel = new JSONModel();
 			this.fetchTotal = 100; //`Top` variable in teh ajax call
 			this.fetchSkip = 0;
 			var g = this;
-			this.fetchProducts();
+			that.getView().getModel("pViewModel").setData(undefined);
+			// this.fetchProducts();
 			this.endResult = false;
 			this.globalSearchField = "";
 			this.globalSearchValue = "";
 			this.brCode = [];
 			this.productCode = [];
+			// this.concatDataFlag = false;
+			sap.ui.getCore().getModel("configModel").setProperty("/concatDataFlag", false);
+			sap.ui.getCore().getModel("configModel").setProperty("/multiPricing", false);
 
 		},
 
@@ -344,6 +402,7 @@ sap.ui.define([
 					var territoryData = response.d.results;
 					sap.ui.getCore().getModel("configModel").setProperty("/territoryData", territoryData);
 					that._roleGrp(territoryData, empNo);
+					that._PromoCode(territoryData, empNo);
 					sap.ui.getCore().busyIndicator.close();
 				},
 				error: function (error) {
@@ -470,7 +529,7 @@ sap.ui.define([
 			if (roleNameRVP.length > 0) {
 				for (var j = 0; j < roleNameRVP.length; j++) {
 					var tempName = {
-						"NAME": roleNameRVP[j].NAME
+						"NAME": roleNameRVP[j].REGION_CODE__C
 					};
 					var nameAdded = false;
 					for (var s = 0; s < allName.length; s++) {
@@ -486,7 +545,7 @@ sap.ui.define([
 			if (roleNameDM.length > 0) {
 				for (var k = 0; k < roleNameDM.length; k++) {
 					var tempName = {
-						"NAME": roleNameDM[k].NAME
+						"NAME": roleNameDM[k].TERRITORY_CODE__C
 					};
 					var nameAdded = false;
 					for (var s = 0; s < allName.length; s++) {
@@ -501,11 +560,39 @@ sap.ui.define([
 			}
 
 			var nameFilter = ""
-			for (var z = 0; z < allName.length; z++) {
-				if (z === 0) {
-					nameFilter = nameFilter + "SALES_GROUP_TM__C eq '" + allName[z].NAME + "'";
-				} else {
-					nameFilter = nameFilter + " or SALES_GROUP_TM__C eq '" + allName[z].NAME + "'";
+
+			/*	for (var z = 0; z < allName.length; z++) {
+					if (z === 0) {
+						nameFilter = nameFilter + "SALES_GROUP_TM__C eq '" + allName[z].NAME + "'";
+					} else {
+						nameFilter = nameFilter + " or SALES_GROUP_TM__C eq '" + allName[z].NAME + "'";
+					}
+				}*/
+
+			//Code for bug 4363
+			if (roleNameTM.length > 0) {
+				for (var z = 0; z < allName.length; z++) {
+					if (z === 0) {
+						nameFilter = nameFilter + "SALES_GROUP_TM__C eq '" + allName[z].NAME + "'";
+					} else {
+						nameFilter = nameFilter + " or SALES_GROUP_TM__C eq '" + allName[z].NAME + "'";
+					}
+				}
+			} else if (roleNameRVP.length > 0) {
+				for (var z = 0; z < allName.length; z++) {
+					if (z === 0) {
+						nameFilter = nameFilter + "REGION_CODE__C eq '" + allName[z].NAME + "'";
+					} else {
+						nameFilter = nameFilter + " or REGION_CODE__C eq '" + allName[z].NAME + "'";
+					}
+				}
+			} else if (roleNameDM.length > 0) {
+				for (var z = 0; z < allName.length; z++) {
+					if (z === 0) {
+						nameFilter = nameFilter + "DISTRICT_CODE__C eq '" + allName[z].NAME + "'";
+					} else {
+						nameFilter = nameFilter + " or DISTRICT_CODE__C eq '" + allName[z].NAME + "'";
+					}
 				}
 			}
 
@@ -543,7 +630,63 @@ sap.ui.define([
 			});
 		},
 
-		_filterDisable: function () {
+		_PromoCode: function (territoryData, empNo) {
+
+			var that = this;
+			var RegionCode = territoryData.filter(function (a) {
+				return a.CAMS_EMPLOYEE_NUM__C === empNo;
+			});
+
+			var RegionCodePromoCode = [];
+			if (RegionCode.length > 0) {
+				for (var r = 0; r < RegionCode.length; r++) {
+					var tempRegionCode = {
+						"key": r,
+						"NAME": RegionCode[r].REGION_CODE__C
+					};
+					var RegionCodeAdded = false;
+					for (var m = 0; m < RegionCodePromoCode.length; m++) {
+						if (RegionCodePromoCode[m].NAME === tempRegionCode.NAME) {
+							RegionCodeAdded = true;
+						}
+					}
+					if (RegionCodeAdded === false) {
+						RegionCodePromoCode.push(tempRegionCode);
+					}
+				}
+			}
+			that.nameFilter = "";
+			if (RegionCodePromoCode.length > 0) {
+				for (var n = 0; n < RegionCodePromoCode.length; n++) {
+					if (n === 0) {
+						that.nameFilter = that.nameFilter + "REGION_CODE__C eq '" + RegionCodePromoCode[n].NAME + "'";
+					} else {
+						that.nameFilter = that.nameFilter + " or REGION_CODE__C eq '" + RegionCodePromoCode[n].NAME + "'";
+					}
+				}
+			}
+			var that = this;
+
+			/*	$.ajax({
+					url: "../pricing/PriceGrid.xsodata/PromoCode?$filter=" + nameFilter,
+					contentType: "application/json",
+					type: 'GET',
+					dataType: "json",
+					async: false,
+					success: function (response) {
+						var promoData = response.d.results
+						var promoModel = new JSONModel();
+						promoModel.setData(promoData);
+						that.getView().setModel(promoModel, "promoModel");
+						sap.ui.getCore().busyIndicator.close();
+					},
+					error: function (error) {
+						sap.ui.getCore().busyIndicator.close();
+					}
+				});*/
+		},
+
+		/*_filterDisable: function () {
 			var pViewModel = this.getView().getModel("pViewModel");
 			if (pViewModel) {
 				pViewModel.setProperty("/brandsVisible", false);
@@ -575,7 +718,7 @@ sap.ui.define([
 				pViewModel.setProperty("/thicknessVisible", false);
 				this.getView().setModel(pViewModel, "pViewModel");
 			}
-		},
+		},*/
 		/*onFilter: function () {
 			var ffVBox = sap.ui.getCore().byId("ffVBox");
 			var filterData = this.filterData;
@@ -694,7 +837,7 @@ sap.ui.define([
 			this.fetchProducts();
 		},*/
 
-		fetchProducts: function () {
+		/*fetchProducts: function () {
 			var brand = this.byId("brand").getModel("brandModel").getProperty("/allBrand");
 			if (brand === undefined) {
 				var brand = this.byId("brand2").getModel("brandModel").getProperty("/allBrand");
@@ -716,6 +859,7 @@ sap.ui.define([
 				var that = this;
 				// var pViewModel = new JSONModel();
 				var pViewModel = this.getView().getModel("pViewModel");
+				pViewModel.setSizeLimit(10000);
 
 				var urlBrand = "";
 
@@ -802,6 +946,11 @@ sap.ui.define([
 							} else {
 								data = response.results;
 							}
+							if (data.length > 0) {
+								that.getView().byId("submitButton").setEnabled(true);
+							} else {
+								that.getView().byId("submitButton").setEnabled(false);
+							}
 							if (data.length < that.fetchTotal) {
 								that.endResult = true;
 							} else {
@@ -810,23 +959,41 @@ sap.ui.define([
 
 							data = data.filter(function (c) {
 								var endDate = 0;
-								if(c.END_DATE__C !== null){
+								if (c.END_DATE__C !== null) {
 									if (c.END_DATE__C.split("(").length > 1) {
-									endDate = parseFloat(c.END_DATE__C.split("(")[1].split(")")[0]);
-								} else {
-									endDate = parseFloat(new Date(c.END_DATE__C).getTime());
+										endDate = parseFloat(c.END_DATE__C.split("(")[1].split(")")[0]);
+									} else {
+										endDate = parseFloat(new Date(c.END_DATE__C).getTime());
+									}
+									// var currDate = new Date().getTime();
+									// return endDate > currDate;
+									function addZero(c) {
+										if (c.length < 2) {
+											c = 0 + c;
+										}
+										return c;
+									}
+									var endDay = new Date(endDate).getFullYear().toString() + addZero(new Date(endDate).getMonth().toString()) + addZero(new Date(
+										endDate).getDate().toString());
+									var currDay = new Date().getFullYear().toString() + addZero(new Date().getMonth().toString()) + addZero(new Date().getDate()
+										.toString());
+									return parseFloat(endDay) >= parseFloat(currDay);
 								}
-								var currDate = new Date().getTime();
-								return endDate > currDate;
-								}
-								
+
 							});
 
-							pViewModel.setData(data);
-							var pViewData = data;
+							// pViewModel.setData(data);
+							// var pViewData = data;
+							var pViewData = "";
+							var concatDataFlag = sap.ui.getCore().getModel("configModel").getProperty("/concatDataFlag");
+							if (pViewModel.getData() !== undefined && pViewModel.getData().length > 0 && concatDataFlag === false) {
+								pViewData = pViewModel.getData().concat(data);
+							} else {
+								pViewData = data;
+							}
 							// var offset = +5.5;
 							var timeZone = that.getTimeZone();
-							var offset = timeZone/60;
+							var offset = timeZone / 60;
 							for (var i = 0; i < pViewData.length; i++) {
 
 								pViewData[i].SELLING_STYLE_CONCAT__C = pViewData[i].PRODUCT_NAME__C + "(" + pViewData[i].PRODUCT_STYLE_NUMBER__C + ")";
@@ -874,12 +1041,13 @@ sap.ui.define([
 									pViewData[i].INFORMATION += " Q";
 								}
 								if (that.selectedCat === "Commercial Broadloom" || that.selectedCat === "Residential Broadloom") {
-									if (pViewData[i].BILLING_PRICE_ROLL__C !== pViewData[i].NET_PRICE_ROLL__C && pViewData[i].BILLING_PRICE_CUT__C !==
-										pViewData[i].NET_PRICE_CUT__C) {
+									if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) !== parseFloat(pViewData[i].NET_PRICE_ROLL__C) && parseFloat(pViewData[
+											i].BILLING_PRICE_CUT__C) !==
+										parseFloat(pViewData[i].NET_PRICE_CUT__C)) {
 										pViewData[i].INFORMATION += " $";
 									}
 								} else {
-									if (pViewData[i].BILLING_PRICE__C !== pViewData[i].NET_PRICE__C) {
+									if (parseFloat(pViewData[i].BILLING_PRICE__C) !== parseFloat(pViewData[i].NET_PRICE__C)) {
 										pViewData[i].INFORMATION += " $";
 									}
 								}
@@ -891,13 +1059,15 @@ sap.ui.define([
 
 								// chanages for modiefied bill price / bill roll / bill cut rpice 
 								if (pViewData[i].BILLING_PRICE__C !== null || pViewData[i].BILLING_PRICE__C !== undefined) {
-									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+									if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "2" || pViewData[i].APPROVAL_STATUS__C ===
+											"3" || pViewData[i].APPROVAL_STATUS__C === "A" || pViewData[i].APPROVAL_STATUS__C === "F") && pViewData[i].MODIFIED_BY__C ===
 										that.loggedInUser && that.selectedCat == "Accessories") {
 										pViewData[i].BILLING_PRICE__C = pViewData[i].REQUESTED_BILLING_PRICE__C;
 									} else {
 										pViewData[i].BILLING_PRICE__C = pViewData[i].BILLING_PRICE__C;
 									}
-									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+									if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "2" || pViewData[i].APPROVAL_STATUS__C ===
+											"3" || pViewData[i].APPROVAL_STATUS__C === "A" || pViewData[i].APPROVAL_STATUS__C === "F") && pViewData[i].MODIFIED_BY__C ===
 										that.loggedInUser && (that.selectedCat === "RevWood" || that.selectedCat === "SolidWood" || that.selectedCat ===
 											"TecWood" || that.selectedCat === "Resilient Tile" || that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile")
 									) {
@@ -905,10 +1075,20 @@ sap.ui.define([
 									} else {
 										pViewData[i].BILLING_PRICE__C = pViewData[i].BILLING_PRICE__C;
 									}
+									//Added by <JAYANT PRAKASH> for <2269>
+									if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "2" || pViewData[i].APPROVAL_STATUS__C ===
+											"3" || pViewData[i].APPROVAL_STATUS__C === "A" || pViewData[i].APPROVAL_STATUS__C === "F") && pViewData[i].MODIFIED_BY__C ===
+										that.loggedInUser && that.selectedCat == "Cushion") {
+										pViewData[i].BILLING_PRICE__C = pViewData[i].REQUESTED_BILLING_PRICE__C;
+									} else {
+										pViewData[i].BILLING_PRICE__C = pViewData[i].BILLING_PRICE__C;
+									}
+									//Added by <JAYANT PRAKASH> for <2269>
 								}
 
 								if (pViewData[i].BILLING_PRICE_ROLL__C !== null || pViewData[i].BILLING_PRICE_ROLL__C !== undefined) {
-									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+									if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "2" || pViewData[i].APPROVAL_STATUS__C ===
+											"3" || pViewData[i].APPROVAL_STATUS__C === "A" || pViewData[i].APPROVAL_STATUS__C === "F") && pViewData[i].MODIFIED_BY__C ===
 										that.loggedInUser) {
 										pViewData[i].BILLING_PRICE_ROLL__C = pViewData[i].REQUESTED_BILLING_PRICE_ROLL__C;
 									} else {
@@ -917,7 +1097,8 @@ sap.ui.define([
 								}
 
 								if (pViewData[i].BILLING_PRICE_CUT__C !== null || pViewData[i].BILLING_PRICE_CUT__C !== undefined) {
-									if (pViewData[i].APPROVAL_STATUS__C === "1" && pViewData[i].MODIFIED_BY__C ===
+									if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "2" || pViewData[i].APPROVAL_STATUS__C ===
+											"3" || pViewData[i].APPROVAL_STATUS__C === "A" || pViewData[i].APPROVAL_STATUS__C === "F") && pViewData[i].MODIFIED_BY__C ===
 										that.loggedInUser) {
 										pViewData[i].BILLING_PRICE_CUT__C = pViewData[i].REQUESTED_BILLING_PRICE_CUT__C;
 									} else {
@@ -947,11 +1128,14 @@ sap.ui.define([
 								pViewData[i].TM3_PRICE__C = pViewData[i].TM3_PRICE__C !== null ? pViewData[i].TM3_PRICE__C : "0";
 								pViewData[i].DM_PRICE__C = pViewData[i].DM_PRICE__C !== null ? pViewData[i].DM_PRICE__C : "0";
 								pViewData[i].RVP_PRICE__C = pViewData[i].RVP_PRICE__C !== null ? pViewData[i].RVP_PRICE__C : "0";
+								pViewData[i].CONTAINER_PRICE__C = pViewData[i].CONTAINER_PRICE__C !== null ? pViewData[i].CONTAINER_PRICE__C : "0";
 
 								if (pViewData[i].BILLING_PRICE_ROLL__C === null) {
 									pViewData[i].PRICE_LEVEL_ROLL__C = "N/A";
 								} else if (pViewData[i].BILLING_PRICE_ROLL__C) { // added condition for Buyers group fields - Pratik - 30/10
-									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i].BUYING_GROUP_NUMBER__C !== ""
+									if (pViewData[i].BUYING_GROUP__C !== null && pViewData[i].BUYING_GROUP__C !== "" && pViewData[i].BUYING_GROUP_NUMBER__C !==
+										null && pViewData[i].BUYING_GROUP_NUMBER__C !==
+										""
 									) {
 										if (parseFloat(pViewData[i].BILLING_PRICE_ROLL__C) > parseFloat(pViewData[i].GROUP_ROLL_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_ROLL__C = "> BG";
@@ -1001,7 +1185,9 @@ sap.ui.define([
 								if (pViewData[i].BILLING_PRICE_CUT__C === null) {
 									pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
 								} else if (pViewData[i].BILLING_PRICE_CUT__C) { // added condition for Buyers group fields - Pratik - 30/10
-									if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i].BUYING_GROUP_NUMBER__C !== ""
+									if (pViewData[i].BUYING_GROUP__C !== null && pViewData[i].BUYING_GROUP__C !== "" && pViewData[i].BUYING_GROUP_NUMBER__C !==
+										null && pViewData[i].BUYING_GROUP_NUMBER__C !==
+										""
 									) {
 										if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) > parseFloat(pViewData[i].GROUP_CUT_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_CUT__C = "> BG";
@@ -1016,9 +1202,10 @@ sap.ui.define([
 									} else {
 										if (pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
 											pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
-										} else if (pViewData[i].BILLING_PRICE_CUT__C === "0" && pViewData[i].TM1_CUT_PRICE__C === "0" && pViewData[i].TM2_CUT_PRICE__C ===
-											"0" && pViewData[i].TM3_CUT_PRICE__C === "0" && pViewData[i].DM_CUT_PRICE__C === "0" && pViewData[i].RVP_CUT_PRICE__C ===
-											"0") {
+										} //Added 0.00 instead of 0 by <JAYANT PRAKASH> for <4532>.
+										else if (pViewData[i].BILLING_PRICE_CUT__C === "0.00" && pViewData[i].TM1_CUT_PRICE__C === "0.00" && pViewData[i].TM2_CUT_PRICE__C ===
+											"0.00" && pViewData[i].TM3_CUT_PRICE__C === "0.00" && pViewData[i].DM_CUT_PRICE__C === "0.00" && pViewData[i].RVP_CUT_PRICE__C ===
+											"0.00") {
 											pViewData[i].PRICE_LEVEL_CUT__C = "N/A";
 										} else if (parseFloat(pViewData[i].BILLING_PRICE_CUT__C) > parseFloat(pViewData[i].TM1_CUT_PRICE__C)) {
 											pViewData[i].PRICE_LEVEL_CUT__C = "> TM1";
@@ -1054,7 +1241,9 @@ sap.ui.define([
 									//Added by Karan on 03.12.2020 to stop the existing logic for Cushion story 2292 start 
 									if (that.selectedCat !== "Cushion") {
 										//Added by Karan on 03.12.2020 to stop the existing logic for Cushion story 2292 end
-										if (pViewData[i].BUYING_GROUP_PRICE__C === "X" && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i].BUYING_GROUP_NUMBER__C !== ""
+										if (pViewData[i].BUYING_GROUP__C !== null && pViewData[i].BUYING_GROUP__C !== "" && pViewData[i].BUYING_GROUP_NUMBER__C !==
+											null && pViewData[i].BUYING_GROUP_NUMBER__C !==
+											""
 										) {
 											if (parseFloat(pViewData[i].BILLING_PRICE__C) > parseFloat(pViewData[i].GROUP_PRICE__C)) {
 												pViewData[i].PRICE_LEVEL__C = "> BG";
@@ -1124,6 +1313,194 @@ sap.ui.define([
 								}
 
 								// Edit Access
+								// var editCheck = false;
+
+								// that.brCode = sap.ui.getCore().getModel("configModel").getProperty("/brCode");
+								// if (that.brCode && that.brCode.length > 0) { //Added additional condition at the start to check if variable is not undefined by Karan on 03.12.2020
+								// 	for (var n = 0; n < that.brCode.length; n++) {
+								// 		if (pViewData[i].ERP_PRODUCT_TYPE__C === that.brCode[n].proCode && pViewData[i].BRAND_CODE__C === that.brCode[n].brand) {
+								// 			editCheck = true;
+								// 			break;
+								// 		}
+								// 	}
+								// 	if (editCheck === true) {
+								// 		pViewData[i].EDITACCESS = "true";
+								// 	} else {
+								// 		pViewData[i].EDITACCESS = "false";
+								// 	}
+								// } // Added after Menu button option check
+
+								if (pViewData[i].APPROVAL_STATUS__C === "4") {
+									pViewData[i].END_DATE__C = "/Date(" + new Date().getTime() + ")/";
+								}
+								//Added on 29-012021 by pratik
+								if (pViewData[i].BUYING_GROUP_NUMBER__C === "") {
+									pViewData[i].BUYING_GROUP_NUMBER__C = null;
+								}
+								if (pViewData[i].BUYING_GROUP__C === "") {
+									pViewData[i].BUYING_GROUP__C = null;
+								}
+								//Added on 29-012021 by pratik
+
+								//Edit Menu options Item Access Check - 2281
+								if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "4") && pViewData[i].MODIFIED_BY__C ===
+									that.loggedInUser) {
+									if (pViewData[i].APPROVAL_STATUS__C === "1") {
+										pViewData[i].EDITMENUCHECK = true;
+										pViewData[i].REMOVEMENUCHECK = true;
+
+									} else if (pViewData[i].APPROVAL_STATUS__C === "4") {
+										pViewData[i].EDITMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = true;
+									}
+								} else if ((pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "4") && pViewData[i].MODIFIED_BY__C !==
+									that.loggedInUser) {
+									//Edit Menu options Item Access Check - 2281
+									// Added by Binay
+									if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C === null || pViewData[i].BUYING_GROUP__C === "0" || pViewData[i].BUYING_GROUP__C === "NA" ||
+											pViewData[i].BUYING_GROUP__C === "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C === null || pViewData[i].BUYING_GROUP__C === "0" || pViewData[i].BUYING_GROUP__C === "NA" ||
+											pViewData[i].BUYING_GROUP__C === "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = false;
+										pViewData[i].EDITLIMITEDMENUCHECK = false;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C !== null || pViewData[i].BUYING_GROUP__C !== "0" || pViewData[i].BUYING_GROUP__C !== "NA" ||
+											pViewData[i].BUYING_GROUP__C !== "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C !== null || pViewData[i].BUYING_GROUP__C !== "0" || pViewData[i].BUYING_GROUP__C !== "NA" ||
+											pViewData[i].BUYING_GROUP__C !== "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C !== null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C !== null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									}
+									// Added by Binay
+								} else {
+									//Edit Menu options Item Access Check - 2281
+									// Added by Binay
+									if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C === null || pViewData[i].BUYING_GROUP__C === "0" || pViewData[i].BUYING_GROUP__C === "NA" ||
+											pViewData[i].BUYING_GROUP__C === "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C === null || pViewData[i].BUYING_GROUP__C === "0" || pViewData[i].BUYING_GROUP__C === "NA" ||
+											pViewData[i].BUYING_GROUP__C === "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = false;
+										pViewData[i].EDITLIMITEDMENUCHECK = false;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C !== null || pViewData[i].BUYING_GROUP__C !== "0" || pViewData[i].BUYING_GROUP__C !== "NA" ||
+											pViewData[i].BUYING_GROUP__C !== "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C !== null &&
+										(pViewData[i].BUYING_GROUP__C !== null || pViewData[i].BUYING_GROUP__C !== "0" || pViewData[i].BUYING_GROUP__C !== "NA" ||
+											pViewData[i].BUYING_GROUP__C !== "N/A")) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C === null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									} else if (pViewData[i].INFORMATION.includes("G") === true &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C !== null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = false;
+										pViewData[i].REMOVEMENUCHECK = false;
+									} else if (pViewData[i].INFORMATION.includes("G") === false &&
+										pViewData[i].BUYING_GROUP_NUMBER__C === null &&
+										pViewData[i].PRICE_GRID_UNIQUE_KEY__C !== null) {
+										pViewData[i].EDITCURRMENUCHECK = true;
+										pViewData[i].EDITLIMITEDMENUCHECK = true;
+										pViewData[i].REMOVECURRMENUCHECK = true;
+									}
+									// Added by Binay
+								}
+
+								// added for issue - 4275
+								if (pViewData[i].APPROVAL_STATUS__C === "") {
+									if (pViewData[i].START_DATE__C.split("(").length > 1) {
+										var std = new Date(parseFloat(pViewData[i].START_DATE__C.split("(")[1].split(")")[0]));
+									} else {
+										var std = new Date(parseFloat(new Date(pViewData[i].START_DATE__C).getTime()));
+									}
+									// var std = new Date(pViewData[i].START_DATE__C);
+									var today = new Date();
+									if (std > today) {
+										if (pViewData[i].PRICE_INCREASE_FLAG__C === "X") {
+											pViewData[i].REMOVECURRMENUCHECK = false;
+										} else {
+											pViewData[i].REMOVECURRMENUCHECK = true;
+										}
+									} else
+									if (pViewData[i].INFORMATION.includes("G") === true) //Added by <JAYANT PRAKASH> for <4329> on <01.20.2021>
+									{
+										pViewData[i].REMOVECURRMENUCHECK = false;
+									}
+								}
+
+								// Edit Menu 
 								var editCheck = false;
 
 								that.brCode = sap.ui.getCore().getModel("configModel").getProperty("/brCode");
@@ -1133,139 +1510,102 @@ sap.ui.define([
 											editCheck = true;
 											break;
 										}
+										if (pViewData[i].APPROVAL_STATUS__C == "2" || pViewData[i].APPROVAL_STATUS__C == "3" || pViewData[i].APPROVAL_STATUS__C ==
+											"A" || pViewData[i].APPROVAL_STATUS__C == "F") {
+											editCheck = false;
+											break;
+										}
 									}
-									if (editCheck === true) {
+									if (editCheck === true && (pViewData[i].REMOVECURRMENUCHECK === true || pViewData[i].EDITCURRMENUCHECK === true ||
+											pViewData[i].EDITLIMITEDMENUCHECK === true || pViewData[i].REMOVEMENUCHECK === true)) {
 										pViewData[i].EDITACCESS = "true";
 									} else {
 										pViewData[i].EDITACCESS = "false";
 									}
 								}
 
-								if (pViewData[i].APPROVAL_STATUS__C === "4") {
-									pViewData[i].END_DATE__C = "/Date(" + new Date().getTime() + ")/";
-								}
-
-								//Edit Menu options Item Access Check - 2281
-								if (pViewData[i].APPROVAL_STATUS__C === "1" || pViewData[i].APPROVAL_STATUS__C === "4") {
-									if (pViewData[i].APPROVAL_STATUS__C === "1") {
-										pViewData[i].EDITMENUCHECK = true;
-										pViewData[i].REMOVEMENUCHECK = true;
-
-									} else if (pViewData[i].APPROVAL_STATUS__C === "4") {
-										pViewData[i].EDITMENUCHECK = false;
-										pViewData[i].REMOVEMENUCHECK = true;
-									}
-								} else {
-									//Edit Menu options Item Access Check - 2281
-									// Added by Binay
-									if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C !== null && (pViewData[i].BUYING_GROUP_PRICE__C !==
-											"X" || pViewData[i].BUYING_GROUP_PRICE__C === null)) {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = true;
-									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C !== null && (pViewData[i]
-											.BUYING_GROUP_PRICE__C !==
-											"X" || pViewData[i].BUYING_GROUP_PRICE__C === null)) {
-										pViewData[i].EDITCURRMENUCHECK = false;
-										pViewData[i].EDITLIMITEDMENUCHECK = false;
-										pViewData[i].REMOVECURRMENUCHECK = false;
-										pViewData[i].REMOVEMENUCHECK = false;
-									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i]
-										.BUYING_GROUP_PRICE__C ===
-										"X") {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = false;
-										pViewData[i].REMOVEMENUCHECK = false;
-									} else if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C !== null && pViewData[i]
-										.BUYING_GROUP_PRICE__C ===
-										"X") {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = true;
-									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
-										.PRICE_GRID_UNIQUE_KEY__C ===
-										null) {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = false;
-										pViewData[i].REMOVEMENUCHECK = false;
-									} else if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
-										.PRICE_GRID_UNIQUE_KEY__C ===
-										null) {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = true;
-									} else if (pViewData[i].INFORMATION.includes("G") === true && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
-										.PRICE_GRID_UNIQUE_KEY__C !==
-										null) {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = false;
-										pViewData[i].REMOVEMENUCHECK = false;
-									} else if (pViewData[i].INFORMATION.includes("G") === false && pViewData[i].BUYING_GROUP_NUMBER__C === null && pViewData[i]
-										.PRICE_GRID_UNIQUE_KEY__C !==
-										null) {
-										pViewData[i].EDITCURRMENUCHECK = true;
-										pViewData[i].EDITLIMITEDMENUCHECK = true;
-										pViewData[i].REMOVECURRMENUCHECK = true;
-									}
-									// Added by Binay
-								}
+								// if (pViewData[i].CPL_PRICE_ID__C.length >= 13 && pViewData[i].APPROVAL_STATUS__C === "1") {
+								// 	if (pViewData[i].START_DATE__C.split("(").length > 1) {
+								// 		var std = new Date(parseFloat(pViewData[i].START_DATE__C.split("(")[1].split(")")[0]));
+								// 	} else {
+								// 		var std = new Date(parseFloat(new Date(pViewData[i].START_DATE__C).getTime()));
+								// 	}
+								// 	// var std = new Date(pViewData[i].START_DATE__C);
+								// 	var today = new Date();
+								// 	if (std > today) {
+								// 		if (pViewData[i].PRICE_INCREASE_FLAG__C === "X") {
+								// 			pViewData[i].REMOVEMENUCHECK = false;
+								// 		} else {
+								// 			pViewData[i].REMOVEMENUCHECK = true;
+								// 		}
+								// 	} else {
+								// 		pViewData[i].REMOVEMENUCHECK = false;
+								// 	}
+								// }
 							}
 
-							function SortByName(data) {
-								// sort by name
-								data.sort(function (a, b) {
-									var nameA = a.NAME.toUpperCase(); // ignore upper and lowercase
-									var nameB = b.NAME.toUpperCase(); // ignore upper and lowercase
-									if (nameA < nameB) {
-										return -1;
-									}
-									if (nameA > nameB) {
-										return 1;
-									}
-									// names must be equal
-									return 0;
-								});
-							}
+							// function SortByName(data) {
+							// 	// sort by name
+							// 	data.sort(function (a, b) {
+							// 		var nameA = a.NAME.toUpperCase(); // ignore upper and lowercase
+							// 		var nameB = b.NAME.toUpperCase(); // ignore upper and lowercase
+							// 		if (nameA < nameB) {
+							// 			return -1;
+							// 		}
+							// 		if (nameA > nameB) {
+							// 			return 1;
+							// 		}
+							// 		// names must be equal
+							// 		return 0;
+							// 	});
+							// }
 
 							var currentUser = that.loggedInUser;
 							var blueData = pViewData.filter(function (a) {
 								return (a.APPROVAL_STATUS__C == "1" || a.APPROVAL_STATUS__C == "4") && a.MODIFIED_BY__C == currentUser;
 							});
 
-							SortByName(blueData);
+							// SortByName(blueData);
+							that.SortByName(blueData);
+							that.draftRecords = blueData;
 
 							var redData = pViewData.filter(function (a) {
 								return (a.APPROVAL_STATUS__C == "2" || a.APPROVAL_STATUS__C == "3") && a.MODIFIED_BY__C == currentUser;
 							});
+							// for(var i=0; i<redData.length; i++) {
+							// 	redData[i].EDITACCESS = "false";
+							// }
 
-							SortByName(redData);
+							// SortByName(redData);
+							that.SortByName(redData);
 
 							var greenData = pViewData.filter(function (a) {
 								return a.APPROVAL_STATUS__C == "A" && a.MODIFIED_BY__C == currentUser;
 							});
 
-							SortByName(greenData);
+							// SortByName(greenData);
+							that.SortByName(greenData);
 
 							var purpleData = pViewData.filter(function (a) {
 								return a.APPROVAL_STATUS__C == "F" && a.MODIFIED_BY__C == currentUser;
 							});
 
-							SortByName(purpleData);
-							
-							var otherUserData = pViewData.filter(function (a) { return !(a.APPROVAL_STATUS__C === "1" && a.CPL_PRICE_ID__C.length === 13 && a.MODIFIED_BY__C !== currentUser)});
-							
-							var blackData = otherUserData.filter(function (el) {
-                                return !blueData.includes(el) && !redData.includes(el) && !greenData.includes(el) && !purpleData.includes(el);
-                            });
-							/*var blackData = pViewData.filter(function (el) {
-								return !blueData.includes(el) && !redData.includes(el) && !greenData.includes(el) && !purpleData.includes(el) && ((el.APPROVAL_STATUS__C == "1" || el.APPROVAL_STATUS__C == "4" || el.APPROVAL_STATUS__C == "2" || el.APPROVAL_STATUS__C == "3" || el.APPROVAL_STATUS__C == "A" || el.APPROVAL_STATUS__C == "F") && el.MODIFIED_BY__C !== currentUser);
-							});*/
-							
+							// SortByName(purpleData);
+							that.SortByName(purpleData);
 
-							SortByName(blackData);
+							var otherUserData = pViewData.filter(function (a) {
+								return !(a.APPROVAL_STATUS__C === "1" && a.CPL_PRICE_ID__C.length === 13 && a.MODIFIED_BY__C !== currentUser)
+							});
+
+							var blackData = otherUserData.filter(function (el) {
+								return !blueData.includes(el) && !redData.includes(el) && !greenData.includes(el) && !purpleData.includes(el);
+							});
+							// var blackData = pViewData.filter(function (el) {
+							// 	return !blueData.includes(el) && !redData.includes(el) && !greenData.includes(el) && !purpleData.includes(el) && ((el.APPROVAL_STATUS__C == "1" || el.APPROVAL_STATUS__C == "4" || el.APPROVAL_STATUS__C == "2" || el.APPROVAL_STATUS__C == "3" || el.APPROVAL_STATUS__C == "A" || el.APPROVAL_STATUS__C == "F") && el.MODIFIED_BY__C !== currentUser);
+							// });
+
+							// SortByName(blackData);
+							that.SortByName(blackData);
 
 							var allData = blueData.concat(redData).concat(greenData).concat(purpleData).concat(blackData);
 
@@ -1274,10 +1614,12 @@ sap.ui.define([
 							sap.ui.getCore().setModel(pViewModel, "pViewModel");
 							that.getView().setModel(pViewModel, "pViewModel");
 
-							sap.ui.getCore().busyIndicator.close();	
+							sap.ui.getCore().busyIndicator.close();
 							that.bindRecords();
 							that.getView().byId("sortButton").setEnabled(true);
 							that.getView().byId("sortButton2").setEnabled(true);
+							// that.concatDataFlag = false;
+							sap.ui.getCore().getModel("configModel").setProperty("/concatDataFlag", false);
 						},
 						error: function (error) {
 							console.log(error);
@@ -1289,18 +1631,19 @@ sap.ui.define([
 				}
 
 			}
-		},
+		},*/
 
 		bindRecords: function () {
+			var that = this;
 			var pViewData = this.getView().getModel("pViewModel").getData();
-			var oAccountDetails = this.getView().byId("lblAccountNO");
+		/*	var oAccountDetails = this.getView().byId("lblAccountNO");
 			if (this.selectedCat === "Cushion") {
-				if(pViewData.length > 0) {
-				oAccountDetails.setText(pViewData[0].ACCOUNT_NAME__C + " (" + pViewData[0].ACCOUNT__C + ")");
+				if (pViewData.length > 0) {
+					oAccountDetails.setText(pViewData[0].ACCOUNT_NAME__C + " (" + pViewData[0].ACCOUNT__C + ")");
 				}
 			} else {
 				oAccountDetails.setText("");
-			}
+			}*/
 
 			var oTable = this.getView().byId("list");
 			oTable.removeAllItems();
@@ -1485,10 +1828,46 @@ sap.ui.define([
 					"type": "InfoButton"
 				};
 				tHeader.push(tData);
+
+				// Added ERP_PRODUCT_TYPE__C to the last column// Added by Diksha story-1948 //
+				var oColumn = new sap.m.Column({
+					header: new sap.m.Label({
+						text: "",
+						visible: false
+					})
+
+				});
+				oTable.addColumn(oColumn);
+				var tData = {
+					"key": this.primaryCols.length + 1,
+					"header": "",
+					"field": "ERP_PRODUCT_TYPE__C",
+					//	"type": "CPLPriceID"
+				};
+				tHeader.push(tData);
+				// Added ERP_PRODUCT_TYPE__C to the last column// End by Diksha story-1948 //
+
+				// Added CPL_PRICE_ID__C to the last column
+				var oColumn = new sap.m.Column({
+					header: new sap.m.Label({
+						text: "",
+						visible: false
+					})
+				});
+				oTable.addColumn(oColumn);
+				var tData = {
+					"key": this.primaryCols.length + 1,
+					"header": "",
+					"field": "CPL_PRICE_ID__C",
+					"type": "CPLPriceID"
+				};
+				tHeader.push(tData);
+				//
+
 			}
 
 			sap.ui.getCore().getModel("configModel").setProperty("/mHeader", tHeader);
-			sap.ui.getCore().getModel("configModel").setProperty("/selectedCat", this.selectedCat);
+			// sap.ui.getCore().getModel("configModel").setProperty("/selectedCat", this.selectedCat);
 
 			var numberFields = tHeader.filter(function (c) {
 				if (c.type === "Currency") {
@@ -1506,6 +1885,7 @@ sap.ui.define([
 				for (var j = 0; j < numberFields.length; j++) {
 					if (pViewData[i][numberFields[j].field] !== null && pViewData[i][numberFields[j].field] !== "") {
 						pViewData[i][numberFields[j].field] = parseFloat(pViewData[i][numberFields[j].field]);
+
 					}
 				}
 				for (var k = 0; k < dateFields.length; k++) {
@@ -1559,8 +1939,9 @@ sap.ui.define([
 								visible: "{= ${pViewModel>REMOVECURRMENUCHECK} === true}",
 								press: [this.onItemRemovePrice, this]
 							}),
+							//Text Change by Jayant for bug 4090
 							new sap.m.MenuItem({
-								text: "Edit",
+								text: "Edit Price",
 								icon: "sap-icon://edit",
 								visible: "{= ${pViewModel>EDITMENUCHECK} === true}",
 								press: [this.onItemEdit, this]
@@ -1594,6 +1975,12 @@ sap.ui.define([
 						text: "{pViewModel>" + tHeader[j].field + "}"
 					});
 					oCell.push(cell1);
+				} else if (tHeader[j].type === "CPLPriceID") {
+					var cell1 = new sap.m.Text({
+						text: "{pViewModel>" + tHeader[j].field.replace('PRODUCT__R.', '') + "}",
+						visible: false
+					});
+					oCell.push(cell1);
 				} else {
 					var cell1 = new sap.m.Text({
 						text: "{pViewModel>" + tHeader[j].field.replace('PRODUCT__R.', '') + "}"
@@ -1601,12 +1988,103 @@ sap.ui.define([
 					oCell.push(cell1);
 				}
 			}
+
 			var aColList = new sap.m.ColumnListItem({
 				cells: oCell,
 				type: "Navigation",
 				press: [this.onSelectionChange, this]
 			});
 			oTable.bindItems("pViewModel>/", aColList);
+
+			//Hide Column ERP_PRODUCT_TYPE //Added by diksha story 1948 //
+			//	oTable.getColumns()[15].setVisible(false);
+			if (oTable.getColumns().length > 0) {
+				that.oColoumLength = oTable.getColumns().length - 2;
+				oTable.getColumns()[that.oColoumLength].setVisible(false);
+			}
+
+			//Start by Diksha story 1948 //
+
+			if (that.EditAcessmeta.length > 0) {
+				for (var i = 0; i < that.EditAcessmeta.length; i++) {
+					for (var j = 0; j < oTable.getItems().length; j++) {
+						if (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === this.selectedCat && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+								that.EditAcessmeta[i].BRAND_CODE__C === null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+							oTable.getItems()[j].getCells()[0].setEnabled(false);
+
+						} else if ((that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === this.selectedCat) && (that.EditAcessmeta[i].BRAND_CODE__C !==
+								"" ||
+								that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+
+							if (that.EditAcessmeta[i].BRAND_CODE__C === oTable.getItems()[j].getCells()[3].getText()) {
+								//	oMenuBtn.setEnabled(false);
+								oTable.getItems()[j].getCells()[0].setEnabled(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === this.selectedCat) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !==
+								"" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+								that.EditAcessmeta[i].BRAND_CODE__C === null)) {
+
+							if (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === oTable.getItems()[j].getCells()[that.oColoumLength].getText()) {
+								//	oMenuBtn.setEnabled(false);
+								oTable.getItems()[j].getCells()[0].setEnabled(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" || that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[i]
+								.SALESFORCE_PRODUCT_CATEGORY__C === "" ||
+								that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === null) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === "" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === null)) {
+
+							if (that.EditAcessmeta[i].BRAND_CODE__C === oTable.getItems()[j].getCells()[3].getText()) {
+								//	oMenuBtn.setEnabled(false);
+								oTable.getItems()[j].getCells()[0].setEnabled(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" && that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[i]
+								.ERP_PRODUCT_TYPE__C !== "" &&
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === "" || that.EditAcessmeta[
+								i].SALESFORCE_PRODUCT_CATEGORY__C === null)) {
+
+							if ((that.EditAcessmeta[i].BRAND_CODE__C === oTable.getItems()[j].getCells()[3].getText()) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C ===
+									oTable.getItems()[j].getCells()[that.oColoumLength].getText())) {
+								//	oMenuBtn.setEnabled(false);
+								oTable.getItems()[j].getCells()[0].setEnabled(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !==
+								"" ||
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].BRAND_CODE__C === "" ||
+								that.EditAcessmeta[i].BRAND_CODE__C === null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === "" || that.EditAcessmeta[
+								i].SALESFORCE_PRODUCT_CATEGORY__C === null)) {
+
+							if (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C === oTable.getItems()[j].getCells()[that.oColoumLength].getText()) {
+								//	oMenuBtn.setEnabled(false);
+								oTable.getItems()[j].getCells()[0].setEnabled(false);
+							}
+
+						} else if ((that.EditAcessmeta[i].BRAND_CODE__C !== "" && that.EditAcessmeta[i].BRAND_CODE__C !== null) && (that.EditAcessmeta[i]
+								.ERP_PRODUCT_TYPE__C !== "" &&
+								that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C !== null) && (that.EditAcessmeta[i].SALESFORCE_PRODUCT_CATEGORY__C === this.selectedCat ||
+								that.EditAcessmeta[
+									i].SALESFORCE_PRODUCT_CATEGORY__C === this.selectedCat)) {
+							oTable.getItems()[j].getCells()[0].setEnabled(false);
+
+							/*	if ((that.EditAcessmeta[i].BRAND_CODE__C === oTable.getItems()[j].getCells()[3].getText()) && (that.EditAcessmeta[i].ERP_PRODUCT_TYPE__C ===
+										oTable.getItems()[j].getCells()[that.oColoumLength].getText())) {
+									//	oMenuBtn.setEnabled(false);
+									oTable.getItems()[j].getCells()[0].setEnabled(false);
+								} */
+
+						}
+					}
+
+				}
+			}
+
+			//End by Diksha story 1948 //
 
 			//changes for Sorting by Blue color 
 			var that = this;
@@ -1659,24 +2137,136 @@ sap.ui.define([
 			var oTable2 = this.getView().byId("list2");
 			oTable2.removeAllItems();
 
-			var listFilter = tHeader.filter(function (a) {
-				return a.key == "1" || a.key == "2" || a.key == "3" || a.key == "4" || a.key == tHeader.length - 1 + "";
+			//added by diksha 9-2-2021 - story 3999//
+
+			this.primaryColsMobile = this.gridmetaMobile.filter((a) => (a[
+				'PRODUCT_CATEGORY__C'] == this.selectedCat)).sort(this.sortGridMeta);
+
+			var tHeaderMobile = [];
+			for (var i = 0; i < this.primaryColsMobile.length; i++) {
+
+				// for Stock checkbox
+
+				var tData = {
+					"key": i,
+					"header": this.primaryColsMobile[i].SHORT_LABEL__C,
+					"field": this.primaryColsMobile[i].FIELD_API_NAME__C.toUpperCase(),
+					"type": this.primaryColsMobile[i].DATA_TYPE__C
+				};
+
+				tHeaderMobile.push(tData);
+			}
+
+			sap.ui.getCore().getModel("configModelMobile").setProperty("/mPhoneHeader", tHeaderMobile);
+
+			var listFilter = tHeaderMobile.filter(function (a) {
+				return a.key == "0" || a.key == "1" || a.key == "2" || a.key == "3" || a.key == "4";
 			});
+
 			var lData = [];
 			if (listFilter.length > 0) {
 				for (var k = 0; k < pViewData.length; k++) {
-					var f0 = listFilter[0].field.replace('PRODUCT__R.', '');
-					var f1 = listFilter[1].field.replace('PRODUCT__R.', '');
-					var f2 = listFilter[2].field.replace('PRODUCT__R.', '');
-					var f3 = listFilter[3].header + ":" + listFilter[3].field.replace('PRODUCT__R.', '');
-					var f4 = listFilter[4].header + ":" + listFilter[4].field.replace('PRODUCT__R.', ''); //  Added by Ronak; Date: 17-Dec-2020; Bug: 3906; For BILLING_PRICE_CUT__C
-					var data = {
-						"intro": pViewData[k][f2],
-						"title": pViewData[k][f1],
-						"number": pViewData[k][f0],
-						"numUnit": pViewData[k][f3],
-						"firstStatus": pViewData[k][f4]
-					};
+					if (this.selectedCat === "Cushion") {
+						var f0 = listFilter[0].field.replace('PRODUCT__R.', '');
+						var f1 = listFilter[1].field.replace('PRODUCT__R.', '');
+						var f2 = listFilter[2].field.replace('PRODUCT__R.', '');
+						var f3 = listFilter[3].field.replace('PRODUCT__R.', '');
+						//	var f4 = listFilter[4].field.replace('PRODUCT__R.', '');
+						var f5 = "CPL_PRICE_ID__C";
+					} else {
+						var f0 = listFilter[0].field.replace('PRODUCT__R.', '');
+						var f1 = listFilter[1].field.replace('PRODUCT__R.', '');
+						var f2 = listFilter[2].field.replace('PRODUCT__R.', '');
+						var f3 = listFilter[3].field.replace('PRODUCT__R.', '');
+						var f4 = listFilter[4].field.replace('PRODUCT__R.', '');
+						var f5 = "CPL_PRICE_ID__C";
+					}
+
+					if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom") {
+						var objAttrLevel = this.getView().byId("objAttrLevel").setVisible(false);
+						var objAttrWeight = this.getView().byId("objAttrWeight").setVisible(false);
+						var objattrRoll = this.getView().byId("objattrRoll").setVisible(true);
+						var objAttrBrand = this.getView().byId("objAttrBrand").setVisible(true);
+						var data = {
+							"Sell#": pViewData[k][f0],
+							"SellingStyle": pViewData[k][f1],
+							"Brand": pViewData[k][f2],
+							"text": pViewData[k][f3],
+							"BillCut": pViewData[k][f4],
+							"CPLPriceID": pViewData[k][f5],
+
+							"BillRoll": listFilter[3].header,
+							"BillCutLabel": listFilter[4].header
+
+						};
+					} else if (this.selectedCat === "Carpet Tile") {
+						var objAttrLevel = this.getView().byId("objAttrLevel").setVisible(false);
+						var objAttrWeight = this.getView().byId("objAttrWeight").setVisible(true);
+						var objattrRoll = this.getView().byId("objattrRoll").setVisible(false);
+						var objAttrBrand = this.getView().byId("objAttrBrand").setVisible(true);
+						var data = {
+							"Sell#": pViewData[k][f0],
+							"SellingStyle": pViewData[k][f1],
+							"Brand": pViewData[k][f2],
+							"Weight": pViewData[k][f3],
+							"BillCut": pViewData[k][f4],
+							"CPLPriceID": pViewData[k][f5],
+							"BillCutLabel": listFilter[4].header,
+							"WeightLabel": listFilter[3].header
+						};
+					} else if (this.selectedCat === "SolidWood" || this.selectedCat === "TecWood" || this.selectedCat === "RevWood" ||
+						this.selectedCat === "Tile" || this.selectedCat === "Resilient Tile" || this.selectedCat === "Accessories") {
+						var objAttrLevel = this.getView().byId("objAttrLevel").setVisible(true);
+						var objattrText = this.getView().byId("objattrText").setVisible(true);
+						var objAttrWeight = this.getView().byId("objAttrWeight").setVisible(false);
+
+						var objattrRoll = this.getView().byId("objattrRoll").setVisible(false);
+						var objAttrBrand = this.getView().byId("objAttrBrand").setVisible(true);
+						var data = {
+							"Sell#": pViewData[k][f0],
+							"SellingStyle": pViewData[k][f1],
+							"Brand": pViewData[k][f2],
+							"BillCut": pViewData[k][f3],
+							"Level": pViewData[k][f4],
+							"CPLPriceID": pViewData[k][f5],
+							"BillCutLabel": listFilter[3].header,
+
+						};
+					} else if (this.selectedCat === "Cushion") {
+						var objAttrLevel = this.getView().byId("objAttrLevel").setVisible(true);
+						var objAttrWeight = this.getView().byId("objAttrWeight").setVisible(false);
+						var objAttrBrand = this.getView().byId("objAttrBrand").setVisible(false);
+						var objattrRoll = this.getView().byId("objattrRoll").setVisible(false);
+						var data = {
+							"Sell#": pViewData[k][f0],
+							"SellingStyle": pViewData[k][f1],
+							"BillCut": pViewData[k][f2],
+							"Level": pViewData[k][f3],
+
+							"CPLPriceID": pViewData[k][f5],
+							"BillCutLabel": listFilter[2].header,
+
+						};
+					} else if (this.selectedCat === "Resilient Sheet") {
+						var objAttrLevel = this.getView().byId("objAttrLevel").setVisible(true);
+						var objAttrWeight = this.getView().byId("objAttrWeight").setVisible(false);
+						var objattrRoll = this.getView().byId("objattrRoll").setVisible(true);
+						var objAttrBrand = this.getView().byId("objAttrBrand").setVisible(false);
+						var data = {
+							"Sell#": pViewData[k][f0],
+							"SellingStyle": pViewData[k][f4],
+
+							"text": pViewData[k][f1],
+							"BillCut": pViewData[k][f2],
+							"Level": pViewData[k][f3],
+
+							"CPLPriceID": pViewData[k][f5],
+							"BillRoll": listFilter[1].header,
+							"BillCutLabel": listFilter[2].header
+
+						};
+					}
+
 					lData.push(data);
 				}
 			}
@@ -1684,6 +2274,8 @@ sap.ui.define([
 
 			lsModel.setData(lData);
 			this.getView().setModel(lsModel, "listModel");
+			//end by diksha 9-2-2021//
+
 		},
 
 		//Edit Popup
@@ -1732,6 +2324,24 @@ sap.ui.define([
 					tHeader[5].field.replace('PRODUCT__R.', '')] && editData.cell7 == a[tHeader[6].field.replace('PRODUCT__R.', '')]
 			});
 
+			// to convert value in decimal
+			function decimalPrice(actualPrice) {
+				return actualPrice.split(".").length > 1 ? actualPrice.split(".")[1].length < 2 ? actualPrice + "0" : actualPrice : actualPrice +
+					".00";
+			}
+			if (editPriceData[0].BILLING_PRICE_ROLL__C !== undefined && editPriceData[0].BILLING_PRICE_ROLL__C !== null) {
+				var actualPrice = editPriceData[0].BILLING_PRICE_ROLL__C.split("$ ")[1];
+				editPriceData[0].BILLING_PRICE_ROLL__C = "$ " + decimalPrice(actualPrice);
+			}
+			if (editPriceData[0].BILLING_PRICE_CUT__C !== undefined && editPriceData[0].BILLING_PRICE_CUT__C !== null) {
+				var actualPrice = editPriceData[0].BILLING_PRICE_CUT__C.split("$ ")[1];
+				editPriceData[0].BILLING_PRICE_CUT__C = "$ " + decimalPrice(actualPrice);
+			}
+			if (editPriceData[0].BILLING_PRICE__C !== undefined && editPriceData[0].BILLING_PRICE__C !== null) {
+				var actualPrice = editPriceData[0].BILLING_PRICE__C.split("$ ")[1];
+				editPriceData[0].BILLING_PRICE__C = "$ " + decimalPrice(actualPrice);
+			}
+
 			editPriceData[0].EditRollPrice = typeof (editPriceData[0].BILLING_PRICE_ROLL__C) === "string" ? editPriceData[0].BILLING_PRICE_ROLL__C
 				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C) :
 				editPriceData[0].BILLING_PRICE_ROLL__C
@@ -1745,6 +2355,11 @@ sap.ui.define([
 			editPriceData[0].EditEachPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
 				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
 				editPriceData[0].BILLING_PRICE__C;
+			//Added by <JAYANT PRAKASH> for <2269>	
+			editPriceData[0].EditSqYdPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+			//Added by <JAYANT PRAKASH> for <2269>	
 			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
 				pattern: "yyyy-MM-dd"
 			});
@@ -1783,105 +2398,140 @@ sap.ui.define([
 			sap.ui.getCore().byId("sbsurfaceLevel").setSelectedItem("-1");
 			sap.ui.getCore().byId("sbAccLevel").setSelectedItem("-1");
 			sap.ui.getCore().byId("sbBGLevel").setSelectedItem("-1");
+			sap.ui.getCore().byId("sbCushLevel").setSelectedItem("-1"); //Added by <JAYANT PRAKASH> for <2269>
 
 			var txtSFCurrPrice = sap.ui.getCore().byId("txtSFCurrPrice");
 			var txtHFCurrPrice = sap.ui.getCore().byId("txtHFCurrPrice");
 			var txtACCurrPrice = sap.ui.getCore().byId("txtACCurrPrice");
+			var txtCushCurrPrice = sap.ui.getCore().byId("txtCushCurrPrice"); //Added by <JAYANT PRAKASH> for <2269>
 			// var txtBGurrPrice = sap.ui.getCore().byId("txtBGurrPrice");
 
 			var txtRoll = sap.ui.getCore().byId("txtRoll");
 			var txtCut = sap.ui.getCore().byId("txtCut");
 			var txtCarton = sap.ui.getCore().byId("txtCarton");
 			var txtEach = sap.ui.getCore().byId("txtEach");
+			var txtSqYd = sap.ui.getCore().byId("txtSqYd"); //Added by <JAYANT PRAKASH> for <2269>
+
+			//added for set price on back button 
+			if (that.isBackEditPrice == true) {
+				txtRoll.setValue(that.txtRoll1);
+				txtCut.setValue(that.txtCut1);
+				txtCarton.setValue(that.txtCarton11);
+				txtEach.setValue(that.txtEach11);
+				txtSqYd.setValue(that.txtSqYd1); //Added by <JAYANT PRAKASH> for <2269>
+				that.isBackEditPrice = false;
+			}
+			//added for set price on back button 
 
 			var lblRoll = sap.ui.getCore().byId("lblRoll");
 			var lblCut = sap.ui.getCore().byId("lblCut");
 			var lblCarton = sap.ui.getCore().byId("lblCarton");
 			var lblEach = sap.ui.getCore().byId("lblEach");
+			var lblSqYd = sap.ui.getCore().byId("lblSqYd"); //Added by <JAYANT PRAKASH> for <2269>
 
 			var sbsurfaceLevel = sap.ui.getCore().byId("sbsurfaceLevel");
 			var sbAccLevel = sap.ui.getCore().byId("sbAccLevel");
 			var sbBGLevel = sap.ui.getCore().byId("sbBGLevel");
+			var sbCushLevel = sap.ui.getCore().byId("sbCushLevel"); //Added by <JAYANT PRAKASH> for <2269>
 
 			// var editType = "PG";
-
+			// Added by Pratik 29-01-2021 for 4504
+			if (editPriceData[0].BUYING_GROUP_NUMBER__C === "") {
+				editPriceData[0].BUYING_GROUP_NUMBER__C = null;
+			}
+			if (editPriceData[0].BUYING_GROUP__C === "") {
+				editPriceData[0].BUYING_GROUP__C = null;
+			}
+			// Added by Pratik 29-01-2021 for 4504
 			if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
 				"Resilient Sheet") {
 
 				txtSFCurrPrice.setVisible(true);
 				txtHFCurrPrice.setVisible(false);
 				txtACCurrPrice.setVisible(false);
+				txtCushCurrPrice.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
 				txtRoll.setVisible(true);
 				txtCut.setVisible(true);
 				txtCarton.setVisible(false);
 				txtEach.setVisible(false);
+				txtSqYd.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
 				lblRoll.setVisible(true);
 				lblCut.setVisible(true);
 				lblCarton.setVisible(false);
 				lblEach.setVisible(false);
+				lblSqYd.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
 				//CPL Edit & Edit Menu options - 2281
-				if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
-					"" && (editPriceData[0].BUYING_GROUP_PRICE__C !==
-						"X" || editPriceData[0].BUYING_GROUP_PRICE__C === null)) {
+				if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C === null || editPriceData[0].BUYING_GROUP__C ===
+						"NA" || editPriceData[0].BUYING_GROUP__C === "N/A" || editPriceData[0].BUYING_GROUP__C === "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
-					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
-					(editPriceData[0].BUYING_GROUP_PRICE__C !== "X" || editPriceData[0].BUYING_GROUP_PRICE__C === null)) {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C === null || editPriceData[0].BUYING_GROUP__C ===
+						"NA" || editPriceData[0].BUYING_GROUP__C === "N/A" || editPriceData[0].BUYING_GROUP__C === "0")) {
 					sbBGLevel.setVisible(false);
 					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
-					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
-					editPriceData[0].BUYING_GROUP_PRICE__C ===
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C !== null || editPriceData[0].BUYING_GROUP__C !==
+						"NA" || editPriceData[0].BUYING_GROUP__C !== "N/A" || editPriceData[0].BUYING_GROUP__C !== "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(true);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
-					"" && editPriceData[0].BUYING_GROUP_PRICE__C ===
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C !== null || editPriceData[0].BUYING_GROUP__C !==
+						"NA" || editPriceData[0].BUYING_GROUP__C !== "N/A" || editPriceData[0].BUYING_GROUP__C !== "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(true);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
-						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C === null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(true);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
 					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
-						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
-					null) {
-					sbBGLevel.setVisible(false);
-					sbsurfaceLevel.setVisible(true);
-					sbsurfaceLevel.setEnabled(false);
-					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
-						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
 					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setVisible(true);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
-						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setVisible(true);
 					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 				}
 
 			} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
@@ -1889,142 +2539,167 @@ sap.ui.define([
 				txtSFCurrPrice.setVisible(false);
 				txtHFCurrPrice.setVisible(true);
 				txtACCurrPrice.setVisible(false);
+				txtCushCurrPrice.setVisible(false); //Added by <JAYANT PRAKASH> for <2269> 
 
 				txtRoll.setVisible(false);
 				txtCut.setVisible(false);
 				txtCarton.setVisible(true);
 				txtEach.setVisible(false);
+				txtSqYd.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
 				lblRoll.setVisible(false);
 				lblCut.setVisible(false);
 				lblCarton.setVisible(true);
 				lblEach.setVisible(false);
+				lblSqYd.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
-				if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
-					"" && editPriceData[0].BUYING_GROUP_PRICE__C !==
-					"X") {
+				if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C === null || editPriceData[0].BUYING_GROUP__C ===
+						"NA" || editPriceData[0].BUYING_GROUP__C === "N/A" || editPriceData[0].BUYING_GROUP__C === "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
-					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
-					editPriceData[0].BUYING_GROUP_PRICE__C !==
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C === null || editPriceData[0].BUYING_GROUP__C ===
+						"NA" || editPriceData[0].BUYING_GROUP__C === "N/A" || editPriceData[0].BUYING_GROUP__C === "0")) {
 					sbBGLevel.setVisible(false);
 					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
-					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
-					editPriceData[0].BUYING_GROUP_PRICE__C ===
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C !== null || editPriceData[0].BUYING_GROUP__C !==
+						"NA" || editPriceData[0].BUYING_GROUP__C !== "N/A" || editPriceData[0].BUYING_GROUP__C !== "0")) {
+					sbBGLevel.setVisible(true);
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(true);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
-					"" && editPriceData[0].BUYING_GROUP_PRICE__C ===
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C !== null || editPriceData[0].BUYING_GROUP__C !==
+						"NA" || editPriceData[0].BUYING_GROUP__C !== "N/A" || editPriceData[0].BUYING_GROUP__C !== "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(true);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
-						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
 					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
-						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
-					null) {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C === null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
-						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
 					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setEnabled(true);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
-						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
-					null) {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !== null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(true);
 					sbsurfaceLevel.setEnabled(true);
 					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 				}
 
 			} else if (that.selectedCat === "Accessories") {
 				txtSFCurrPrice.setVisible(false);
 				txtHFCurrPrice.setVisible(false);
 				txtACCurrPrice.setVisible(true);
+				txtCushCurrPrice.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
 				txtRoll.setVisible(false);
 				txtCut.setVisible(false);
 				txtCarton.setVisible(false);
 				txtEach.setVisible(true);
+				txtSqYd.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
 				lblRoll.setVisible(false);
 				lblCut.setVisible(false);
 				lblCarton.setVisible(false);
 				lblEach.setVisible(true);
+				lblSqYd.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 
-				if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
-					"" && editPriceData[0].BUYING_GROUP_PRICE__C !==
-					"X") {
+				if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C === null || editPriceData[0].BUYING_GROUP__C ===
+						"NA" || editPriceData[0].BUYING_GROUP__C === "N/A" || editPriceData[0].BUYING_GROUP__C === "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
-					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
-					editPriceData[0].BUYING_GROUP_PRICE__C !==
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C === null || editPriceData[0].BUYING_GROUP__C ===
+						"NA" || editPriceData[0].BUYING_GROUP__C === "N/A" || editPriceData[0].BUYING_GROUP__C === "0")) {
 					sbBGLevel.setVisible(false);
 					sbBGLevel.setEnabled(false);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
-					editPriceData[0].BUYING_GROUP_NUMBER__C !== "" &&
-					editPriceData[0].BUYING_GROUP_PRICE__C ===
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C !== null || editPriceData[0].BUYING_GROUP__C !==
+						"NA" || editPriceData[0].BUYING_GROUP__C !== "N/A" || editPriceData[0].BUYING_GROUP__C !== "0")) {
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(true);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C !== null && editPriceData[0].BUYING_GROUP_NUMBER__C !==
-					"" && editPriceData[0].BUYING_GROUP_PRICE__C ===
-					"X") {
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C !== null &&
+					(editPriceData[0].BUYING_GROUP__C !== null || editPriceData[0].BUYING_GROUP__C !==
+						"NA" || editPriceData[0].BUYING_GROUP__C !== "N/A" || editPriceData[0].BUYING_GROUP__C !== "0")) {
+					sbBGLevel.setVisible(true);
 					sbBGLevel.setVisible(true);
 					sbBGLevel.setEnabled(true);
 					sbsurfaceLevel.setVisible(false);
 					sbAccLevel.setVisible(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
-						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
 					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(false);
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(true);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
-						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					sbAccLevel.setEnabled(false);
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(false);
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(true);
 					sbAccLevel.setEnabled(false);
-				} else if (editPriceData[0].INFORMATION.includes("G") === true && (editPriceData[0].BUYING_GROUP_NUMBER__C === null ||
-						editPriceData[0].BUYING_GROUP_NUMBER__C === "") &&
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
 					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
 					null) {
 					sbBGLevel.setVisible(false);
@@ -2032,16 +2707,79 @@ sap.ui.define([
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(true);
 					sbAccLevel.setEnabled(true);
-				} else if (editPriceData[0].INFORMATION.includes("G") === false && (editPriceData[0].BUYING_GROUP_NUMBER__C === null || editPriceData[0].BUYING_GROUP_NUMBER__C ===
-						"") && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
 					null) {
 					sbBGLevel.setVisible(false);
 					sbsurfaceLevel.setVisible(false);
 					sbsurfaceLevel.setEnabled(false);
 					sbAccLevel.setVisible(true);
 					sbAccLevel.setEnabled(true);
+					sbCushLevel.setVisible(false); //Added by <JAYANT PRAKASH> for <2269>
 				}
 
+			} //start by <JAYANT PRAKASH> for <2269>
+			else if (that.selectedCat === "Cushion") {
+				txtSFCurrPrice.setVisible(false);
+				txtHFCurrPrice.setVisible(false);
+				txtACCurrPrice.setVisible(false);
+				txtCushCurrPrice.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>
+
+				txtRoll.setVisible(false);
+				txtCut.setVisible(false);
+				txtCarton.setVisible(false);
+				txtEach.setVisible(false);
+				txtSqYd.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>
+
+				lblRoll.setVisible(false);
+				lblCut.setVisible(false);
+				lblCarton.setVisible(false);
+				lblEach.setVisible(false);
+				lblSqYd.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>	
+
+				if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>
+					sbCushLevel.setEnabled(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C ===
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>
+					sbCushLevel.setEnabled(false);
+				} else if (editPriceData[0].INFORMATION.includes("G") === true && editPriceData[0].BUYING_GROUP_NUMBER__C === null &&
+					editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>
+					sbCushLevel.setEnabled(true);
+				} else if (editPriceData[0].INFORMATION.includes("G") === false &&
+					editPriceData[0].BUYING_GROUP_NUMBER__C === null && editPriceData[0].PRICE_GRID_UNIQUE_KEY__C !==
+					null) {
+					sbBGLevel.setVisible(false);
+					sbsurfaceLevel.setVisible(false);
+					sbsurfaceLevel.setEnabled(false);
+					sbAccLevel.setVisible(false);
+					sbCushLevel.setVisible(true); //Added by <JAYANT PRAKASH> for <2269>
+					sbCushLevel.setEnabled(true);
+				}
+			} // End by <JAYANT PRAKASH> for <2269>
+			if (editPriceData[0].ROLL_CARTON_PRICE_ONLY_FLAG__C === "X") {
+				txtCut.setEditable(false);
+			} else {
+				txtCut.setEditable(true);
 			}
 
 			that.txtRoll = sap.ui.getCore().byId("txtRoll");
@@ -2049,11 +2787,14 @@ sap.ui.define([
 
 			that.txtCarton = sap.ui.getCore().byId("txtCarton");
 			that.txtEach = sap.ui.getCore().byId("txtEach");
+
+			that.txtSqYd = sap.ui.getCore().byId("txtSqYd "); //Added by <JAYANT PRAKASH> for <2269>
 		},
 
 		OnCancelPGSurface: function () {
 			this._oDialogPGsurface.close();
-			this.fetchProducts();
+			//Chnages by diksha - bug 4671- 9/2/2021//
+			//	this.fetchProducts();
 		},
 
 		afterClosePGSurface: function () {
@@ -2070,88 +2811,157 @@ sap.ui.define([
 			var txtCut = sap.ui.getCore().byId("txtCut");
 			var txtCarton = sap.ui.getCore().byId("txtCarton");
 			var txtEach = sap.ui.getCore().byId("txtEach");
+			var txtSqYd = sap.ui.getCore().byId("txtSqYd"); //Added by <JAYANT PRAKASH> for <2269>
 			that.txtRoll1 = txtRoll.getValue();
 			that.txtCut1 = txtCut.getValue();
 			that.txtCarton11 = txtCarton.getValue();
 			that.txtEach11 = txtEach.getValue();
+			that.txtSqYd1 = txtSqYd.getValue(); //Added by <JAYANT PRAKASH> for <2269>	
+
+			if (editPriceData[0].ROLL_CARTON_PRICE_ONLY_FLAG__C === "X") {
+				//End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				if (that.txtRoll1 < 1) {
+					txtRoll.setValueState("Error");
+					MessageToast.show("Price should be greater than $1 !");
+					return
+				}
+			} else {
+				//End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				if (that.txtRoll1 < 1) {
+					txtRoll.setValueState("Error");
+					MessageToast.show("Price should be greater than $1 !");
+					return
+				}
+				//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				//else if (that.txtCut1 === 0) {
+				//End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				else if (that.txtCut1 < 1) {
+					txtCut.setValueState("Error");
+					MessageToast.show("Price should be greater than $1 !");
+					return
+				}
+				//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				//else if (that.txtCarton11 === 0) {
+				//End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				else if (that.txtCarton11 < 0.05) {
+					txtCarton.setValueState("Error");
+					MessageToast.show("Price should be greater than 5 cents !");
+					return
+				}
+				//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				//else if (that.txtEach11 === 0) {
+				//End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				else if (that.txtEach11 < 0.05) {
+					txtEach.setValueState("Error");
+					MessageToast.show("Price should be greater than 5 cents !");
+					return
+
+				}
+				//Added by <JAYANT PRAKASH> for <2269>
+				else if (that.txtSqYd1 < 0.1) {
+					txtEach.setValueState("Error");
+					MessageToast.show("Price should be greater than 10 cents !");
+					return
+				}
+				//Added by <JAYANT PRAKASH> for <2269>
+			}
 
 			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
 			//if (that.txtRoll1 === 0) { 
-			if (that.txtRoll1 < 1) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
-				txtRoll.setValueState("Error");
-				MessageToast.show("Price should be greater than $1 !");
-				return
-			}
-			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
-			//else if (that.txtCut1 === 0) {
-			else if (that.txtCut1 < 1) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
-				txtCut.setValueState("Error");
-				MessageToast.show("Price should be greater than $1 !");
-				return
-			}
-			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
-			//else if (that.txtCarton11 === 0) {
-			else if (that.txtCarton11 < 0.05) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
-				txtCarton.setValueState("Error");
-				MessageToast.show("Price should be greater than 5 cents !");
-				return
-			}
-			//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
-			//else if (that.txtEach11 === 0) {
-			else if (that.txtEach11 < 0.05) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>	
-				txtEach.setValueState("Error");
-				MessageToast.show("Price should be greater than 5 cents !");
-				return
+			/*	if (that.txtRoll1 < 1) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+					txtRoll.setValueState("Error");
+					MessageToast.show("Price should be greater than $1 !");
+					return
+				}
+				//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				//else if (that.txtCut1 === 0) {
+				else if (that.txtCut1 < 1) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+					txtCut.setValueState("Error");
+					MessageToast.show("Price should be greater than $1 !");
+					return
+				}
+				//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				//else if (that.txtCarton11 === 0) {
+				else if (that.txtCarton11 < 0.05) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+					txtCarton.setValueState("Error");
+					MessageToast.show("Price should be greater than 5 cents !");
+					return
+				}
+				//Start of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>
+				//else if (that.txtEach11 === 0) {
+				else if (that.txtEach11 < 0.05) { //End of changes by <JAYANT PRAKASH> for <4010/4007> on <12.30.2020>	
+					txtEach.setValueState("Error");
+					MessageToast.show("Price should be greater than 5 cents !");
+					return
 
-			} else {
-				editPriceData[0].BILLING_PRICE_ROLL__C = typeof (editPriceData[0].BILLING_PRICE_ROLL__C) === "string" ? editPriceData[0].BILLING_PRICE_ROLL__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C) :
-					editPriceData[0].BILLING_PRICE_ROLL__C;
+				}*/
+			editPriceData[0].BILLING_PRICE_ROLL__C = typeof (editPriceData[0].BILLING_PRICE_ROLL__C) === "string" ? editPriceData[0].BILLING_PRICE_ROLL__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C) :
+				editPriceData[0].BILLING_PRICE_ROLL__C;
 
-				editPriceData[0].BILLING_PRICE_CUT__C = typeof (editPriceData[0].BILLING_PRICE_CUT__C) === "string" ? editPriceData[0].BILLING_PRICE_CUT__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_CUT__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_CUT__C) :
-					editPriceData[0].BILLING_PRICE_CUT__C;
-				editPriceData[0].BILLING_PRICE__C = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
-					.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
-					editPriceData[0].BILLING_PRICE__C;
-				if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
-					"Resilient Sheet") {
-					if (that.txtRoll1 === editPriceData[0].BILLING_PRICE_ROLL__C || that.txtCut1 === editPriceData[0].BILLING_PRICE_CUT__C) {
+			editPriceData[0].BILLING_PRICE_CUT__C = typeof (editPriceData[0].BILLING_PRICE_CUT__C) === "string" ? editPriceData[0].BILLING_PRICE_CUT__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE_CUT__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE_CUT__C) :
+				editPriceData[0].BILLING_PRICE_CUT__C;
+			editPriceData[0].BILLING_PRICE__C = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+			if (this.selectedCat === "Residential Broadloom" || this.selectedCat === "Commercial Broadloom" || this.selectedCat ===
+				"Resilient Sheet") {
+				//changes for bug 4544 and 4540 by diksha
+				if (editPriceData[0].ROLL_CARTON_PRICE_ONLY_FLAG__C === "X") {
+					if (that.txtRoll1 === editPriceData[0].BILLING_PRICE_ROLL__C) {
 						MessageBox.alert("Price is not changed !");
 						return;
 					}
-				} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
-					"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
-
-					if (that.txtCarton11 === editPriceData[0].BILLING_PRICE__C) {
-						MessageBox.alert("Price is not changed !");
-						return;
-					}
-				} else if (that.selectedCat === "Accessories") {
-					if (that.txtEach11 === editPriceData[0].BILLING_PRICE__C) {
+				} else {
+					if (that.txtRoll1 === editPriceData[0].BILLING_PRICE_ROLL__C && that.txtCut1 === editPriceData[0].BILLING_PRICE_CUT__C) {
 						MessageBox.alert("Price is not changed !");
 						return;
 					}
 				}
-				this._oDialogPGsurface.close();
-				that.afterClosePGSurface();
+				/*if (that.txtRoll1 === editPriceData[0].BILLING_PRICE_ROLL__C || that.txtCut1 === editPriceData[0].BILLING_PRICE_CUT__C) {
+					MessageBox.alert("Price is not changed !");
+					return;
+				}*/
+			} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
+				"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
 
-				if (!this._oDialogJustification) {
-					this._oDialogJustification = sap.ui.xmlfragment("cf.cpl.fragments.Justification", this);
-					this.getView().addDependent(this._oDialogJustification);
+				if (that.txtCarton11 === editPriceData[0].BILLING_PRICE__C) {
+					MessageBox.alert("Price is not changed !");
+					return;
 				}
-
-				this._oDialogJustification.open();
-				var rdbReason = sap.ui.getCore().byId("rdbReason");
-
-				rdbReason.setSelectedButton(false);
-
+			} else if (that.selectedCat === "Accessories") {
+				if (that.txtEach11 === editPriceData[0].BILLING_PRICE__C) {
+					MessageBox.alert("Price is not changed !");
+					return;
+				}
 			}
+			//Added by <JAYANT PRAKASH> for <2269>
+			else if (that.selectedCat === "Cushion") {
+				if (that.txtSqYd1 === editPriceData[0].BILLING_PRICE__C) {
+					MessageBox.alert("Price is not changed !");
+					return;
+				}
+			}
+			//Added by <JAYANT PRAKASH> for <2269>
+			this._oDialogPGsurface.close();
+			that.afterClosePGSurface();
+
+			if (!this._oDialogJustification) {
+				this._oDialogJustification = sap.ui.xmlfragment("cf.cpl.fragments.Justification", this);
+				this.getView().addDependent(this._oDialogJustification);
+				this._oDialogJustification.setModel(sap.ui.getCore().getModel("configModel"), "configModel");
+			}
+
+			this._oDialogJustification.open();
+			// var rdbReason = sap.ui.getCore().byId("rdbReason");
+			// rdbReason.setSelectedButton(false);
 
 		},
 
 		OnCancelJustification: function (oEvent) {
 			this._oDialogJustification.close();
+			// this._oDialogJustification.destroy();
 		},
 
 		afterCloseJustifcation: function () {
@@ -2165,17 +2975,30 @@ sap.ui.define([
 			var that = this;
 			this._oDialogJustification.close();
 			that.afterCloseJustifcation();
+			//added for set price on back button 
+			that.isBackEditPrice = true;
+			//added for set price on back button 
 			that.openDialogPgSurface(this.editData);
 		},
 
 		onSelectionReason: function (oEvent) {
-			var rdbReason = sap.ui.getCore().byId("rdbReason");
+			// var rdbReason = sap.ui.getCore().byId("rdbReason");
+			var rdb1 = sap.ui.getCore().byId("rdb1");
+			var rdb2 = sap.ui.getCore().byId("rdb2");
+			var rdb3 = sap.ui.getCore().byId("rdb3");
+			var rdb4 = sap.ui.getCore().byId("rdb4");
+			var rdb5 = sap.ui.getCore().byId("rdb5");
 			var lblreasonerrmsg = sap.ui.getCore().byId("lblreasonerrmsg");
 			var lblPromocodeMsg = sap.ui.getCore().byId("lblPromocodeMsg");
-			rdbReason.setValueState("None");
+			// rdbReason.setValueState("None");
+			rdb1.setValueState("None");
+			rdb2.setValueState("None");
+			rdb3.setValueState("None");
+			rdb4.setValueState("None");
+			rdb5.setValueState("None");
 			lblreasonerrmsg.setVisible(false);
 			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
-			if (oEvent.getSource().getSelectedButton().getText() === "Promo Code") {
+			if (oEvent.getSource().getText() === "Promo Code") {
 				txtPromocode.setVisible(true);
 			} else {
 				txtPromocode.setVisible(false);
@@ -2183,14 +3006,54 @@ sap.ui.define([
 			}
 		},
 
-		_handleValueHelpPromocode: function (oEvent) {
+		loadPromoCode: function (oEvent) {
+			var that = this;
+			var promoModel = new JSONModel();
+			sap.ui.getCore().busyIndicator.open();
+			$.ajax({
+				url: "pricing/PriceGrid.xsodata/PromoCode?$filter=" + that.nameFilter,
+				//	url: "pricing/PriceGrid.xsodata/PromoCode?$format=json",
+				contentType: "application/json",
+				type: 'GET',
+				dataType: "json",
+				async: false,
+				success: function (response) {
+					var promoData = response.d.results
+						/*promoData.unshift({
+							"REGION_CODE__C": "",
+							"DISTRICT_TYPE__C": "",
+							"PROMO_CODE__C": ""
+						});*/
+					promoModel.setData(promoData);
+					that.getView().setModel(promoModel, "promoModel");
+					oEvent.getSource().getBinding("items").resume();
+					sap.ui.getCore().busyIndicator.close();
+				},
+				error: function (error) {
+					sap.ui.getCore().busyIndicator.close();
+				}
+			});
+		},
+
+		onPromoCodeChange: function (oEvent) {
+			var rdb4 = sap.ui.getCore().byId("rdb4");
+			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
+			var lblPromocodeMsg = sap.ui.getCore().byId("lblPromocodeMsg");
+			if (rdb4.getSelected() && (txtPromocode.getSelectedKey() === "" || txtPromocode.getSelectedKey() === undefined)) {
+				txtPromocode.setValueState("Error");
+			} else {
+				lblPromocodeMsg.setVisible(false);
+				txtPromocode.setValueState("None");
+			}
+		},
+
+		/*_handleValueHelpPromocode: function (oEvent) {
 
 			var sInputPromocode = oEvent.getSource().getValue();
 
 			this.inputPromocodeId = oEvent.getSource().getId();
 			var that = this;
 			var promoModel = new JSONModel();
-			// create value help dialog
 			if (!this._valueHelpDialogPromocode) {
 				this._valueHelpDialogPromocode = sap.ui.xmlfragment(
 					"cf.cpl.fragments.Promocode",
@@ -2243,7 +3106,7 @@ sap.ui.define([
 			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
 			txtPromocode.setValueState("None");
 			lblPromocodeMsg.setVisible(false);
-		},
+		},*/
 
 		onSurfaceBtnChange: function (oEvent) {
 			var clickedBtn = oEvent.getParameters().item.getKey();
@@ -2364,60 +3227,60 @@ sap.ui.define([
 		onAccesBtnChange: function (oEvent) {
 			var clickedBtn = oEvent.getParameters().item.getKey();
 			var editPriceData = this.getView().getModel("editModel").getData();
-		/*	if (clickedBtn === "TM") {
-				if (editPriceData[0].TM_PRICE__C === null || editPriceData[0].TM_PRICE__C === "") {
-					editPriceData[0].EditEachPrice = "0.05";
-
-				} else {
-					editPriceData[0].EditEachPrice = editPriceData[0].TM_PRICE__C;
-				}
-			} else if (clickedBtn === "DM") {
-				if (editPriceData[0].DM_PRICE__C === null || editPriceData[0].DM_PRICE__C === "") {
-					editPriceData[0].EditEachPrice = "0.05";
-
-				} else {
-					editPriceData[0].EditEachPrice = editPriceData[0].DM_PRICE__C;
-				}
-			} else if (clickedBtn === "RVP") {
-				if (editPriceData[0].RVP_PRICE__C === null || editPriceData[0].RVP_PRICE__C === "") {
-					editPriceData[0].EditEachPrice = "0.05";
-
-				} else {
-					editPriceData[0].EditEachPrice = editPriceData[0].RVP_PRICE__C;
-				}
-			}*/
-			//Changes by diksha to set level of ACCESSORIES To TM1,TM2,TM3,DM,RVP  --1/1/2020
-				if (clickedBtn === "TM1") {
+			/*	if (clickedBtn === "TM") {
 					if (editPriceData[0].TM_PRICE__C === null || editPriceData[0].TM_PRICE__C === "") {
 						editPriceData[0].EditEachPrice = "0.05";
+
 					} else {
 						editPriceData[0].EditEachPrice = editPriceData[0].TM_PRICE__C;
-					}
-				} else if (clickedBtn === "TM2") {
-					if (editPriceData[0].TM2_PRICE__C === null || editPriceData[0].TM2_PRICE__C === "") {
-						editPriceData[0].EditEachPrice = "0.05";
-					} else {
-						editPriceData[0].EditEachPrice = editPriceData[0].TM2_PRICE__C;
-					}
-				} else if (clickedBtn === "TM3") {
-					if (editPriceData[0].TM3_PRICE__C === null || editPriceData[0].TM3_PRICE__C === "") {
-						editPriceData[0].EditEachPrice = "0.05";
-					} else {
-						editPriceData[0].EditEachPrice = editPriceData[0].TM3_PRICE__C;
 					}
 				} else if (clickedBtn === "DM") {
 					if (editPriceData[0].DM_PRICE__C === null || editPriceData[0].DM_PRICE__C === "") {
 						editPriceData[0].EditEachPrice = "0.05";
+
 					} else {
 						editPriceData[0].EditEachPrice = editPriceData[0].DM_PRICE__C;
 					}
 				} else if (clickedBtn === "RVP") {
 					if (editPriceData[0].RVP_PRICE__C === null || editPriceData[0].RVP_PRICE__C === "") {
 						editPriceData[0].EditEachPrice = "0.05";
+
 					} else {
 						editPriceData[0].EditEachPrice = editPriceData[0].RVP_PRICE__C;
 					}
+				}*/
+			//Changes by diksha to set level of ACCESSORIES To TM1,TM2,TM3,DM,RVP  --1/1/2020
+			if (clickedBtn === "TM1") {
+				if (editPriceData[0].TM_PRICE__C === null || editPriceData[0].TM_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].TM_PRICE__C;
 				}
+			} else if (clickedBtn === "TM2") {
+				if (editPriceData[0].TM2_PRICE__C === null || editPriceData[0].TM2_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].TM2_PRICE__C;
+				}
+			} else if (clickedBtn === "TM3") {
+				if (editPriceData[0].TM3_PRICE__C === null || editPriceData[0].TM3_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].TM3_PRICE__C;
+				}
+			} else if (clickedBtn === "DM") {
+				if (editPriceData[0].DM_PRICE__C === null || editPriceData[0].DM_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].DM_PRICE__C;
+				}
+			} else if (clickedBtn === "RVP") {
+				if (editPriceData[0].RVP_PRICE__C === null || editPriceData[0].RVP_PRICE__C === "") {
+					editPriceData[0].EditEachPrice = "0.05";
+				} else {
+					editPriceData[0].EditEachPrice = editPriceData[0].RVP_PRICE__C;
+				}
+			}
 			this.getView().getModel("editModel").setData(editPriceData);
 		},
 
@@ -2462,6 +3325,32 @@ sap.ui.define([
 			}
 			this.getView().getModel("editModel").setData(editPriceData);
 		},
+		//Added by <JAYANT PRAKASH> for <2269>
+		onCushBtnChange: function (oEvent) {
+			var clickedBtn = oEvent.getParameters().item.getKey();
+			var editPriceData = this.getView().getModel("editModel").getData();
+			if (clickedBtn === "TM") {
+				if (editPriceData[0].TM_1_TO_24_PRICE__C === null || editPriceData[0].TM_1_TO_24_PRICE__C === "") {
+					editPriceData[0].EditSqYdPrice = "0.1";
+				} else {
+					editPriceData[0].EditSqYdPrice = editPriceData[0].TM_1_TO_24_PRICE__C;
+				}
+			} else if (clickedBtn === "DM") {
+				if (editPriceData[0].DM_1_TO_24_PRICE__C === null || editPriceData[0].DM_1_TO_24_PRICE__C === "") {
+					editPriceData[0].EditSqYdPrice = "0.1";
+				} else {
+					editPriceData[0].EditSqYdPrice = editPriceData[0].DM_1_TO_24_PRICE__C;
+				}
+			} else if (clickedBtn === "RVP") {
+				if (editPriceData[0].RVP_1_TO_24_PRICE__C === null || editPriceData[0].RVP_1_TO_24_PRICE__C === "") {
+					editPriceData[0].EditSqYdPrice = "0.1";
+				} else {
+					editPriceData[0].EditSqYdPrice = editPriceData[0].RVP_1_TO_24_PRICE__C;
+				}
+			}
+			this.getView().getModel("editModel").setData(editPriceData);
+		},
+		//Added by <JAYANT PRAKASH> for <2269>
 
 		onSavePrice: function () {
 			var that = this;
@@ -2472,20 +3361,26 @@ sap.ui.define([
 
 			var txtCarton11 = sap.ui.getCore().byId("idtxtCarton1").setText(that.txtCarton);
 			var txtEach11 = sap.ui.getCore().byId("idtxtEach1").setText(that.txtEach);
+			var txtSqYd1 = sap.ui.getCore().byId("idtxtSqYd1").setText(that.txtSqYd); //Added by <JAYANT PRAKASH> for <2269>
 			var txtPromocode = sap.ui.getCore().byId("txtPromocode");
 			var lblPromocodeMsg = sap.ui.getCore().byId("lblPromocodeMsg");
 			var txtComment = sap.ui.getCore().byId("txtComment");
 			var lblcommenterrmsg = sap.ui.getCore().byId("lblcommenterrmsg");
-			var rdbReason = sap.ui.getCore().byId("rdbReason");
+			// 			var rdbReason = sap.ui.getCore().byId("rdbReason");
+			var rdb1 = sap.ui.getCore().byId("rdb1");
+			var rdb2 = sap.ui.getCore().byId("rdb2");
+			var rdb3 = sap.ui.getCore().byId("rdb3");
+			var rdb4 = sap.ui.getCore().byId("rdb4");
+			var rdb5 = sap.ui.getCore().byId("rdb5");
 			var lblreasonerrmsg = sap.ui.getCore().byId("lblreasonerrmsg");
 
-			if (rdbReason.getSelectedButton() === undefined) {
-				lblreasonerrmsg.setVisible(true);
-				rdbReason.setValueState("Error");
-
-			} else {
+			if (txtComment.getValue().length > 2000) {
+				MessageBox.error("Comments should be less than 2000 Characters");
+				return false;
+			}
+			if (rdb1.getSelected() || rdb2.getSelected() || rdb3.getSelected() || rdb4.getSelected() || rdb5.getSelected()) {
 				lblreasonerrmsg.setVisible(false);
-				if (rdbReason.getSelectedButton().getText() === "Promo Code" && txtPromocode.getValue() === "") {
+				if (rdb4.getSelected() && txtPromocode.getSelectedKey() === "") {
 					txtPromocode.setValueState("Error");
 					lblPromocodeMsg.setVisible(true);
 					return;
@@ -2493,12 +3388,20 @@ sap.ui.define([
 					txtPromocode.setValueState("None");
 					lblPromocodeMsg.setVisible(false);
 				}
+			} else {
+				lblreasonerrmsg.setVisible(true);
+				rdb1.setValueState("Error");
+				rdb2.setValueState("Error");
+				rdb3.setValueState("Error");
+				rdb4.setValueState("Error");
+				rdb5.setValueState("Error");
+				// return;
 			}
 
 			var PromocodeFlag = false;
-			if (txtPromocode.getValue() !== "") {
+			if (txtPromocode.getSelectedKey() !== "") {
 				for (var m = 0; m < oModelPromo.getData().length; m++) {
-					if (txtPromocode.getValue() === oModelPromo.getData()[m].PROMO_CODE__C) {
+					if (txtPromocode.getSelectedKey() === oModelPromo.getData()[m].PROMO_CODE__C) {
 						PromocodeFlag = true;
 						break;
 					}
@@ -2537,11 +3440,19 @@ sap.ui.define([
 				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
 				editPriceData[0].BILLING_PRICE__C;
 
+			//Added by <JAYANT PRAKASH> for <2269>
+			editPriceData[0].EditSqYdPrice = typeof (editPriceData[0].BILLING_PRICE__C) === "string" ? editPriceData[0].BILLING_PRICE__C
+				.split("$ ").length > 0 ? parseFloat(editPriceData[0].BILLING_PRICE__C.split("$ ")[1]) : parseFloat(editPriceData[0].BILLING_PRICE__C) :
+				editPriceData[0].BILLING_PRICE__C;
+			//Added by <JAYANT PRAKASH> for <2269>	
+
 			editPriceData[0].EditRollPrice = parseFloat(editPriceData[0].BILLING_PRICE_ROLL__C, 10);
 			editPriceData[0].EditCutPrice = parseFloat(editPriceData[0].BILLING_PRICE_CUT__C, 10);
 
-			if (txtComment.getValue() === "" || txtComment.getValue() === null || rdbReason.getSelectedButton() === undefined) {
-
+			// if (txtComment.getValue() === "" || txtComment.getValue() === null || rdbReason.getSelectedButton() === undefined) {
+			if (txtComment.getValue() === "" || txtComment.getValue() === null || rdb1.getSelected() === false || rdb2.getSelected() === false ||
+				rdb3.getSelected() ===
+				false || rdb4.getSelected() === false || rdb5.getSelected() === false) {
 				if (that.userRole === "TM") {
 					if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
 						"Resilient Sheet") {
@@ -2549,7 +3460,11 @@ sap.ui.define([
 								editPriceData[0].DM_CUT_PRICE__C)) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if ((that.txtRoll1 <= editPriceData[0].DM_ROLL_PRICE__C) || (that.txtCut1 <=
 								editPriceData[0].DM_CUT_PRICE__C)) {
@@ -2558,18 +3473,52 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*	rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);*/
+								return;
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diskha 4627
+								//rdb1.setValueState("None");
+								//rdb2.setValueState("None");
+								//rdb3.setValueState("None");
+								//rdb4.setValueState("None");
+								//rdb5.setValueState("None");
+								//lblreasonerrmsg.setVisible(false);
+
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								} //Diskha 4627
+
 							}
-							return;
+
+							//	return;
 						}
 					} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
 						"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
 						if (that.txtCarton11 > editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 
 						} else if (that.txtCarton11 <= editPriceData[0].DM_PRICE__C) {
@@ -2578,17 +3527,52 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*rdb1.setValueState("Error");
+								rdb2.setValueState("Error");
+								rdb3.setValueState("Error");
+								rdb4.setValueState("Error");
+								rdb5.setValueState("Error");
+								lblreasonerrmsg.setVisible(true);*/
+
+								return;
+
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha 4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diksha 4627
 							}
-							return;
+
+							//	return;
 						}
 					} else if (that.selectedCat === "Accessories") {
 						if (that.txtEach11 > editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if (that.txtEach11 <= editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(true);
@@ -2596,13 +3580,81 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*rdb1.setValueState("Error");
+								rdb2.setValueState("Error");
+								rdb3.setValueState("Error");
+								rdb4.setValueState("Error");
+								rdb5.setValueState("Error");
+								lblreasonerrmsg.setVisible(true);*/
+								return;
+
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha 4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diksha 4627
 							}
-							return;
+
+							//	return;
 						}
 					}
+					//Added by <JAYANT PRAKASH> for <2269>
+					else if (that.selectedCat === "Cushion") {
+						if (that.txtSqYd1 > editPriceData[0].DM_1_TO_24_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtSqYd1 <= editPriceData[0].DM_1_TO_24_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+								return;
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+
+							}
+						}
+					}
+					//Added by <JAYANT PRAKASH> for <2269>
 
 				} else if (that.userRole === "DM") {
 					if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
@@ -2611,7 +3663,12 @@ sap.ui.define([
 								editPriceData[0].DM_CUT_PRICE__C)) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if ((that.txtRoll1 < editPriceData[0].DM_ROLL_PRICE__C) || (that.txtCut1 <
 								editPriceData[0].DM_CUT_PRICE__C)) {
@@ -2620,18 +3677,52 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								//rdb1.setValueState("Error");
+								//rdb2.setValueState("Error");
+								//rdb3.setValueState("Error");
+								//rdb4.setValueState("Error");
+								//rdb5.setValueState("Error");
+								//lblreasonerrmsg.setVisible(true);
+								return;
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diskha 4627
+
 							}
-							return;
+
+							//	return;
 						}
 					} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
 						"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
 						if (that.txtCarton11 >= editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if (that.txtCarton11 < editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(true);
@@ -2639,17 +3730,50 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*	rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);*/
+								return;
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha 4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								} //Diksha 4627
+
 							}
-							return;
+
+							//	return;
 						}
 					} else if (that.selectedCat === "Accessories") {
 						if (that.txtEach11 >= editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if (that.txtEach11 < editPriceData[0].DM_PRICE__C) {
 							lblcommenterrmsg.setVisible(true);
@@ -2657,13 +3781,80 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*rdb1.setValueState("Error");
+								rdb2.setValueState("Error");
+								rdb3.setValueState("Error");
+								rdb4.setValueState("Error");
+								rdb5.setValueState("Error");
+								lblreasonerrmsg.setVisible(true);*/
+								return;
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diskha 4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diksha 4627
 							}
-							return;
+
+							//	return;
 						}
 					}
+					//Added by <JAYANT PRAKASH> for <2269>
+					else if (that.selectedCat === "Cushion") {
+						if (that.txtSqYd1 > editPriceData[0].DM_1_TO_24_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtSqYd1 <= editPriceData[0].DM_1_TO_24_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+								return;
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+
+							}
+						}
+					}
+					//Added by <JAYANT PRAKASH> for <2269>
 
 				} else if (that.userRole === "RVP") {
 					if (that.selectedCat === "Residential Broadloom" || that.selectedCat === "Commercial Broadloom" || that.selectedCat ===
@@ -2672,7 +3863,12 @@ sap.ui.define([
 								editPriceData[0].RVP_CUT_PRICE__C)) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if ((that.txtRoll1 < editPriceData[0].RVP_ROLL_PRICE__C) || (that.txtCut1 <
 								editPriceData[0].RVP_CUT_PRICE__C)) {
@@ -2681,18 +3877,53 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*rdb1.setValueState("Error");
+								rdb2.setValueState("Error");
+								rdb3.setValueState("Error");
+								rdb4.setValueState("Error");
+								rdb5.setValueState("Error");
+								lblreasonerrmsg.setVisible(true);*/
+								return;
+
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha 4627
+								/*	rdb1.setValueState("None");
+									rdb2.setValueState("None");
+									rdb3.setValueState("None");
+									rdb4.setValueState("None");
+									rdb5.setValueState("None");
+									lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diksha 4627
+
 							}
-							return;
+
+							//	return;
 						}
 					} else if (that.selectedCat === "Carpet Tile" || that.selectedCat === "Tile" || that.selectedCat === "TecWood" || that.selectedCat ===
 						"SolidWood" || that.selectedCat === "RevWood" || that.selectedCat === "Resilient Tile") {
 						if (that.txtCarton11 >= editPriceData[0].RVP_PRICE__C) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if (that.txtCarton11 < editPriceData[0].RVP_PRICE__C) {
 							lblcommenterrmsg.setVisible(true);
@@ -2700,17 +3931,51 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*rdb1.setValueState("Error");
+								rdb2.setValueState("Error");
+								rdb3.setValueState("Error");
+								rdb4.setValueState("Error");
+								rdb5.setValueState("Error");
+								lblreasonerrmsg.setVisible(true);*/
+								return;
+
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha 4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diksha 4627
 							}
-							return;
+
+							//	return;
 						}
 					} else if (that.selectedCat === "Accessories") {
 						if (that.txtEach11 >= editPriceData[0].RVP_PRICE__C) {
 							lblcommenterrmsg.setVisible(false);
 							txtComment.setValueState("None");
-							rdbReason.setValueState("None");
+							// rdbReason.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
 							lblreasonerrmsg.setVisible(false);
 						} else if (that.txtEach11 < editPriceData[0].RVP_PRICE__C) {
 							lblcommenterrmsg.setVisible(true);
@@ -2718,13 +3983,81 @@ sap.ui.define([
 							if (txtComment.getValue() === "") {
 								lblcommenterrmsg.setVisible(true);
 								txtComment.setValueState("Error");
+								/*rdb1.setValueState("Error");
+								rdb2.setValueState("Error");
+								rdb3.setValueState("Error");
+								rdb4.setValueState("Error");
+								rdb5.setValueState("Error");
+								lblreasonerrmsg.setVisible(true);*/
+								return;
 							} else {
 								lblcommenterrmsg.setVisible(false);
 								txtComment.setValueState("None");
+								//Diksha 4627
+								/*rdb1.setValueState("None");
+								rdb2.setValueState("None");
+								rdb3.setValueState("None");
+								rdb4.setValueState("None");
+								rdb5.setValueState("None");
+								lblreasonerrmsg.setVisible(false);*/
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+								//Diksha 4627
+
 							}
-							return;
+
+							//	return;
 						}
 					}
+					//Added by <JAYANT PRAKASH> for <2269>
+					else if (that.selectedCat === "Cushion") {
+						if (that.txtSqYd1 > editPriceData[0].DM_1_TO_24_PRICE__C) {
+							lblcommenterrmsg.setVisible(false);
+							txtComment.setValueState("None");
+							rdb1.setValueState("None");
+							rdb2.setValueState("None");
+							rdb3.setValueState("None");
+							rdb4.setValueState("None");
+							rdb5.setValueState("None");
+							lblreasonerrmsg.setVisible(false);
+						} else if (that.txtSqYd1 <= editPriceData[0].DM_1_TO_24_PRICE__C) {
+							lblcommenterrmsg.setVisible(true);
+							txtComment.setValueState("Error");
+							if (txtComment.getValue() === "") {
+								lblcommenterrmsg.setVisible(true);
+								txtComment.setValueState("Error");
+								return;
+							} else {
+								lblcommenterrmsg.setVisible(false);
+								txtComment.setValueState("None");
+
+								if (rdb1.getSelected() === false &&
+									rdb2.getSelected() === false && rdb3.getSelected() ===
+									false && rdb4.getSelected() === false && rdb5.getSelected() === false) {
+
+									rdb1.setValueState("Error");
+									rdb2.setValueState("Error");
+									rdb3.setValueState("Error");
+									rdb4.setValueState("Error");
+									rdb5.setValueState("Error");
+									lblreasonerrmsg.setVisible(true);
+									return;
+								}
+
+							}
+						}
+					}
+					//Added by <JAYANT PRAKASH> for <2269>
 
 				}
 			}
@@ -2737,8 +4070,9 @@ sap.ui.define([
 			var reqNetPriceAcc = "";
 			var justification = "";
 			var reqNetPriceCarton = "";
+			var reqNetPriceSqYd = ""; //Added by <JAYANT PRAKASH> for <2269>
 
-			if (rdbReason.getSelectedButton() !== undefined) {
+			/*if (rdbReason.getSelectedButton() !== undefined) {
 				switch (rdbReason.getSelectedButton().getText()) {
 				case "Promotional Price":
 					justification = "1";
@@ -2759,6 +4093,20 @@ sap.ui.define([
 					justification = "";
 					break;
 				}
+			}*/
+
+			if (rdb1.getSelected()) {
+				justification = "1";
+			} else if (rdb2.getSelected()) {
+				justification = "2";
+			} else if (rdb3.getSelected()) {
+				justification = "3";
+			} else if (rdb4.getSelected()) {
+				justification = "4";
+			} else if (rdb5.getSelected()) {
+				justification = "5";
+			} else {
+				justification = "";
 			}
 
 			//changes for Sorting by Blue color 
@@ -2832,22 +4180,48 @@ sap.ui.define([
 				editPriceData.EditCartonPrice = editPriceData.EditCartonPrice;
 			}
 			//changes for Sorting by Blue color 
+			//Added by <JAYANT PRAKASH> for <2269>
+			if (editPriceData.EditSqYdPrice === null || editPriceData.EditSqYdPrice === undefined) {
+				editPriceData.EditSqYdPrice = 0;
+
+			} else {
+				editPriceData.EditSqYdPrice = editPriceData.EditSqYdPrice;
+			}
+			//Added by <JAYANT PRAKASH> for <2269>
 
 			if (editPriceData.BILLING_PRICE_ROLL__C) {
 				if (editPriceData.BUYING_GROUP_NUMBER__C !== null) {
-					reqNetPriceCut = parseFloat(editPriceData.EditCutPrice) - (parseFloat(editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C) +
+					//Start of comments by <JAYANT PRAKASH> for <4995/5231>
+					/*reqNetPriceCut = parseFloat(editPriceData.EditCutPrice) - (parseFloat(editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C) +
 						parseFloat(editPriceData.EditCutPrice) * parseFloat(editPriceData.CORPORATE_CUT_PALLET_PERCENT__C) / 100);
 
 					reqNetPriceRoll = parseFloat(editPriceData.EditRollPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
-						parseFloat(editPriceData.EditRollPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+						parseFloat(editPriceData.EditRollPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);*/
+					//End of comments by <JAYANT PRAKASH> for <4995/5231>
 
+					//Start of changes by <JAYANT PRAKASH> for <4995/5231>
+					reqNetPriceCut = parseFloat(that.txtCut1) - (parseFloat(editPriceData.CORPORATE_CUT_PALLET_DOLLAR__C) +
+						parseFloat(that.txtCut1) * parseFloat(editPriceData.CORPORATE_CUT_PALLET_PERCENT__C) / 100);
+
+					reqNetPriceRoll = parseFloat(that.txtRoll1) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtRoll1) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+					//End  of changes by <JAYANT PRAKASH> for <4995/5231>
 				} else {
-					reqNetPriceCut = parseFloat(editPriceData.EditCutPrice) - (parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C) +
+					//Start of comments by <JAYANT PRAKASH> for <4995/5231>
+					/*reqNetPriceCut = parseFloat(editPriceData.EditCutPrice) - (parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C) +
 						parseFloat(editPriceData.EditCutPrice) * parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C) / 100);
 
 					reqNetPriceRoll = parseFloat(editPriceData.EditRollPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
-						parseFloat(editPriceData.EditRollPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+						parseFloat(editPriceData.EditRollPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);*/
+					//End of comments by <JAYANT PRAKASH> for <4995/5231>
 
+					//Start of changes by <JAYANT PRAKASH> for <4995/5231>
+					reqNetPriceCut = parseFloat(that.txtCut1) - (parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_DOLLAR__C) +
+						parseFloat(that.txtCut1) * parseFloat(editPriceData.NON_CORPORATE_CUT_PALLET_PERCENT__C) / 100);
+
+					reqNetPriceRoll = parseFloat(that.txtRoll1) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtRoll1) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+					//End  of changes by <JAYANT PRAKASH> for <4995/5231>
 				}
 
 				if (reqNetPriceCut === "") {
@@ -2866,20 +4240,42 @@ sap.ui.define([
 
 			if (editPriceData.BILLING_PRICE__C) {
 				if (editPriceData.BUYING_GROUP_NUMBER__C !== null) {
-
-					reqNetPriceAcc = parseFloat(editPriceData.EditEachPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
+					//Start of comments by <JAYANT PRAKASH> for <4995/5231>
+					/*reqNetPriceAcc = parseFloat(editPriceData.EditEachPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
 						parseFloat(editPriceData.EditEachPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
 
 					reqNetPriceCarton = parseFloat(editPriceData.EditCartonPrice) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
-						parseFloat(editPriceData.EditCartonPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+						parseFloat(editPriceData.EditCartonPrice) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);*/
+					// End of comments by <JAYANT PRAKASH> for <4995/5231>
 
+					//Start of changes by <JAYANT PRAKASH> for <4995/5231>
+					reqNetPriceAcc = parseFloat(that.txtEach11) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtEach11) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
+					reqNetPriceCarton = parseFloat(that.txtCarton11) - (parseFloat(editPriceData.CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtCarton11) * parseFloat(editPriceData.CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+					//End  of changes by <JAYANT PRAKASH> for <4995/5231>
 				} else {
-
-					reqNetPriceAcc = parseFloat(editPriceData.EditEachPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+					//Start of comments by <JAYANT PRAKASH> for <4995/5231>
+					/*reqNetPriceAcc = parseFloat(editPriceData.EditEachPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
 						parseFloat(editPriceData.EditEachPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
 
 					reqNetPriceCarton = parseFloat(editPriceData.EditCartonPrice) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
-						parseFloat(editPriceData.EditCartonPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+						parseFloat(editPriceData.EditCartonPrice) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);*/
+					// End of comments by <JAYANT PRAKASH> for <4995/5231>	
+
+					//Start of changes by <JAYANT PRAKASH> for <4995/5231>
+					reqNetPriceAcc = parseFloat(that.txtEach11) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtEach11) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+
+					reqNetPriceCarton = parseFloat(that.txtCarton11) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtCarton11) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+					//End  of changes by <JAYANT PRAKASH> for <4995/5231>
+
+					//Added by <JAYANT PRAKASH> for <2269>
+					reqNetPriceSqYd = parseFloat(that.txtSqYd1) - (parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_DOLLAR__C) +
+						parseFloat(that.txtSqYd1) * parseFloat(editPriceData.NON_CORPORATE_ROLL_CARTON_PERCENT__C) / 100);
+					//Added by <JAYANT PRAKASH> for <2269>
 				}
 
 				if (reqNetPriceAcc === "") {
@@ -2892,6 +4288,13 @@ sap.ui.define([
 				} else {
 					reqNetPriceCarton = parseFloat(reqNetPriceCarton);
 				}
+				//Added by <JAYANT PRAKASH> for <2269>
+				if (reqNetPriceSqYd === "") {
+					reqNetPriceSqYd = 0;
+				} else {
+					reqNetPriceSqYd = parseFloat(reqNetPriceSqYd);
+				}
+				//Added by <JAYANT PRAAKSH> for <2269>
 
 			}
 
@@ -2905,12 +4308,13 @@ sap.ui.define([
 			var dpkStartdate = dateFormat.format(new Date(this.dpkStartdate));
 			var dpkEnddate = dateFormat.format(new Date(this.dpkEnddate));
 
-			var cplRecordId = new Date().getTime().toString();
+			var cplRecordId = new Date().getTime().toString() + (Math.floor(Math.random() * (100000 - 9999)) + 9999);
 
 			var txtCut1 = txtCut1.getText();
 			var txtRoll1 = txtRoll1.getText();
 			var txtEach11 = txtEach11.getText();
 			var txtCarton11 = txtCarton11.getText();
+			var txtSqYd1 = txtSqYd1.getText(); //Added by <JAYANT PRAKASH> for <2269>
 
 			that.txtCut1 = that.txtCut1 !== null ? that.txtCut1 : 0;
 			that.txtRoll1 = that.txtRoll1 !== null ? that.txtRoll1 : 0;
@@ -2920,6 +4324,10 @@ sap.ui.define([
 			reqNetPriceCarton = reqNetPriceCarton !== null ? reqNetPriceCarton : 0;
 			that.txtEach11 = that.txtEach11 !== null ? that.txtEach11 : 0;
 			reqNetPriceAcc = reqNetPriceAcc !== null ? reqNetPriceAcc : 0;
+			//Added by <JAYANT PRAKASH> for <2269>
+			that.txtSqYd1 = that.txtSqYd1 !== null ? that.txtSqYd1 : 0;
+			reqNetPriceSqYd = reqNetPriceSqYd !== null ? reqNetPriceSqYd : 0;
+			//Added by <JAYANT PRAKASH> for <2269>
 
 			if (this.lmtdPrice === false) {
 
@@ -2937,7 +4345,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecut": that.txtCut1,
 						"Reqbillpriceroll": that.txtRoll1,
@@ -2959,7 +4367,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": that.txtCarton11,
 						"Reqbillpricepallet": that.txtCarton11,
@@ -2980,12 +4388,33 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillprice": that.txtEach11,
 						"Reqnetprice": reqNetPriceAcc
 					};
 				}
+				//Added by <JAYANT PRAKASH> for <2269>
+				else if (this.selectedCat === "Cushion") {
+					updateUrl = "pricing/Updatecplcushion.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getSelectedKey(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillprice": that.txtSqYd1,
+						"Reqnetprice": reqNetPriceSqYd
+					};
+				}
+				//Addedby <JAYANT PRAKASH> for <2269>
 			} else {
 
 				if (this.selectedCat === "Residential Broadloom") {
@@ -3002,7 +4431,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecut": parseFloat(that.txtCut1),
 						"Reqbillpriceroll": parseFloat(that.txtRoll1),
@@ -3023,7 +4452,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecut": parseFloat(that.txtCut1),
 						"Reqbillpriceroll": parseFloat(that.txtRoll1),
@@ -3044,7 +4473,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecut": parseFloat(that.txtCut1),
 						"Reqbillpriceroll": parseFloat(that.txtRoll1),
@@ -3065,7 +4494,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillprice": parseFloat(that.txtEach11),
 						"Reqnetprice": reqNetPriceAcc
@@ -3084,7 +4513,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": parseFloat(that.txtCarton11),
 						"Reqbillpricepallet": parseFloat(that.txtCarton11),
@@ -3105,7 +4534,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": parseFloat(that.txtCarton11),
 						"Reqbillpricepallet": parseFloat(that.txtCarton11),
@@ -3126,7 +4555,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": parseFloat(that.txtCarton11),
 						"Reqbillpricepallet": parseFloat(that.txtCarton11),
@@ -3147,7 +4576,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": parseFloat(that.txtCarton11),
 						"Reqbillpricepallet": parseFloat(that.txtCarton11),
@@ -3168,7 +4597,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": parseFloat(that.txtCarton11),
 						"Reqbillpricepallet": parseFloat(that.txtCarton11),
@@ -3189,7 +4618,7 @@ sap.ui.define([
 						"Cplrecordid": cplRecordId,
 						"Approvalstatus": "1",
 						"Justification": justification,
-						"Promocode": txtPromocode.getValue(),
+						"Promocode": txtPromocode.getSelectedKey(),
 						"Modifiedby": that.loggedInUser,
 						"Reqbillpricecarton": parseFloat(that.txtCarton11),
 						"Reqbillpricepallet": parseFloat(that.txtCarton11),
@@ -3197,6 +4626,28 @@ sap.ui.define([
 						"Reqnetpricepallet": reqNetPriceCarton
 					};
 				}
+				//Addedby <JAYANT PRAKASH> for <2269>
+				else if (this.selectedCat === "Cushion") {
+					updateUrl = "pricing/InsertLimitedCushion.xsjs";
+					payload = {
+						"Accountno": editPriceData.ACCOUNT__C,
+						"Productuniquekey": editPriceData.PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": editPriceData.CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Newstartdate": dpkStartdate,
+						"Newenddate": dpkEnddate,
+						"Cplrecordid": cplRecordId,
+						"Approvalstatus": "1",
+						"Justification": justification,
+						"Promocode": txtPromocode.getSelectedKey(),
+						"Modifiedby": that.loggedInUser,
+						"Reqbillprice": parseFloat(that.txtSqYd1),
+						"Reqnetprice": reqNetPriceSqYd
+					};
+				}
+				//Addedby <JAYANT PRAKASH> for <2269>
 			}
 
 			var cmtPayload = {
@@ -3215,45 +4666,48 @@ sap.ui.define([
 				success: function (response) {
 					console.log(response);
 					var g = that;
-					if(g.lmtdPrice === true) { // Added by <JAYANT PRAKASH> for <4080> on <01.09.2021>
-					$.ajax({
-						url: "pricing/Updatecplcomment.xsjs",
-						contentType: "application/json",
-						method: "POST",
-						async: false,
-						data: JSON.stringify(cmtPayload),
-						success: function (response) {
-							console.log(response);
-							g.OnCancelJustification();
-							MessageBox.success("Success! Record Inserted Successfully");
-							g.fetchProducts();
-							sap.ui.getCore().busyIndicator.close();
-						},
-						error: function (error) {
-							console.log(error);
-							sap.ui.getCore().busyIndicator.close();
-						}
-					});
-					// Start of changes by <JAYANT PRAKASH> for <4080> on <01.09.2021>
+					if (g.lmtdPrice === true) { // Added by <JAYANT PRAKASH> for <4080> on <01.09.2021>
+						$.ajax({
+							url: "pricing/Updatecplcomment.xsjs",
+							contentType: "application/json",
+							method: "POST",
+							async: false,
+							data: JSON.stringify(cmtPayload),
+							success: function (response) {
+								console.log(response);
+								g.lmtdPrice = false;
+								g.OnCancelJustification();
+								MessageBox.success("Success! Record Inserted Successfully");
+								g.getView().getModel("pViewModel").setData(undefined);
+								g.fetchProducts();
+								sap.ui.getCore().busyIndicator.close();
+							},
+							error: function (error) {
+								console.log(error);
+								sap.ui.getCore().busyIndicator.close();
+							}
+						});
+						// Start of changes by <JAYANT PRAKASH> for <4080> on <01.09.2021>
 					} else {
-					$.ajax({
-						url: "pricing/Updatecplcomment.xsjs",
-						contentType: "application/json",
-						method: "POST",
-						async: false,
-						data: JSON.stringify(cmtPayload),
-						success: function (response) {
-							console.log(response);
-							g.OnCancelJustification();
-							g.fetchProducts();
-							sap.ui.getCore().busyIndicator.close();
-						},
-						error: function (error) {
-							console.log(error);
-							sap.ui.getCore().busyIndicator.close();
-						}
-					});	
-					}	//End of changes by <JAYANT PRAKASH> for <4080> on <01.09.2021>
+						$.ajax({
+							url: "pricing/Updatecplcomment.xsjs",
+							contentType: "application/json",
+							method: "POST",
+							async: false,
+							data: JSON.stringify(cmtPayload),
+							success: function (response) {
+								console.log(response);
+								g.OnCancelJustification();
+								g.getView().getModel("pViewModel").setData(undefined);
+								g.fetchProducts();
+								sap.ui.getCore().busyIndicator.close();
+							},
+							error: function (error) {
+								console.log(error);
+								sap.ui.getCore().busyIndicator.close();
+							}
+						});
+					} //End of changes by <JAYANT PRAKASH> for <4080> on <01.09.2021>
 
 				},
 				error: function (error) {
@@ -3336,11 +4790,11 @@ sap.ui.define([
 
 			var removeModel = new JSONModel(removePriceData);
 			this.getView().setModel(removeModel, "removeModel");
-			
+
 			//Start of changes by <JAYANT PRAKASH> for <4059> on <01.06.2021>
 			//MessageBox.error("Are you Sure?", {
-			MessageBox.error("Are you Sure - Remove the record from submission ?", { 
-			//Endof changes by <JAYANT PRAKASH> for <4059> on <01.06.2021>
+			MessageBox.error("Are you sure - Remove the record from submission ?", {
+				//Endof changes by <JAYANT PRAKASH> for <4059> on <01.06.2021>
 				title: "Remove Price",
 				actions: [MessageBox.Action.YES, MessageBox.Action.NO],
 				emphasizedAction: "YES",
@@ -3348,7 +4802,8 @@ sap.ui.define([
 					//sap.m.MessageToast.show("Action selected: " + );
 					if (sAction === "YES") {
 						if (removeModel.getData().length > 0) {
-							if (removeModel.getData()[0].APPROVAL_STATUS__C === "4" || removeModel.getData()[0].APPROVAL_STATUS__C === "1") {
+							if ((removeModel.getData()[0].APPROVAL_STATUS__C === "4" || removeModel.getData()[0].APPROVAL_STATUS__C === "1") &&
+								removeModel.getData()[0].MODIFIED_BY__C === that.loggedInUser) {
 								that.onRemoveDraftPrice(removeModel.getData()[0].isLimitedPrice);
 							} else {
 								that.onRemoveCurrentPrice();
@@ -3356,6 +4811,7 @@ sap.ui.define([
 						}
 
 					} else {
+						that.getView().getModel("pViewModel").setData(undefined);
 						that.fetchProducts();
 					}
 				}
@@ -3367,7 +4823,7 @@ sap.ui.define([
 			var that = this;
 			var removePriceData = this.getView().getModel("removeModel").getData();
 			var removeUrl = "pricing/RemoveCurrentPrice.xsjs";
-			var cplRecordId = new Date().getTime().toString();
+			var cplRecordId = new Date().getTime().toString() + (Math.floor(Math.random() * (100000 - 9999)) + 9999);
 			var startDate = removePriceData[0].EDIT_START_DATE;
 			var endDate = removePriceData[0].EDIT_END_DATE;
 
@@ -3394,6 +4850,7 @@ sap.ui.define([
 					data: JSON.stringify(payload),
 					success: function (response) {
 						console.log(response);
+						g.getView().getModel("pViewModel").setData(undefined);
 						g.fetchProducts();
 						sap.ui.getCore().busyIndicator.close();
 					},
@@ -3404,7 +4861,23 @@ sap.ui.define([
 				});
 			}
 
-			if (endDate !== "4000-12-31") {
+			removeCall();
+
+			/*var std = new Date(startDate);
+			var today = new Date();
+			if (std > today) {
+				if (removePriceData[0].PRICE_INCREASE_FLAG__C === "X") {
+					MessageBox.error("Criteria is not matched");
+					return;
+				} else {
+					removeCall();
+				}
+			} else {
+				MessageBox.error("Criteria is not matched");
+				return;
+			}*/
+			//Comment For bug 4275 by Diksha
+			/*if (endDate !== "4000-12-31") {
 				var std = new Date(startDate);
 				var today = new Date();
 				if (std > today) {
@@ -3420,7 +4893,7 @@ sap.ui.define([
 				}
 			} else {
 				removeCall();
-			}
+			}*/
 		},
 
 		onRemoveDraftPrice: function (isLimitedPrice) {
@@ -3428,7 +4901,7 @@ sap.ui.define([
 			var removePriceData = this.getView().getModel("removeModel").getData();
 			var payload;
 			var removeUrl;
-			var cplRecordId = new Date().getTime().toString();
+			var cplRecordId = new Date().getTime().toString() + (Math.floor(Math.random() * (100000 - 9999)) + 9999);
 			var startDate = removePriceData[0].EDIT_START_DATE;
 			var endDate = removePriceData[0].EDIT_END_DATE;
 			if (isLimitedPrice === true) {
@@ -3451,6 +4924,7 @@ sap.ui.define([
 					data: JSON.stringify(payload),
 					success: function (response) {
 						console.log(response);
+						that.getView().getModel("pViewModel").setData(undefined);
 						that.fetchProducts();
 						MessageBox.success("Success! Record is removed from Submission");
 						sap.ui.getCore().busyIndicator.close();
@@ -3521,6 +4995,26 @@ sap.ui.define([
 						"Reqnetprice": 0
 					};
 				}
+				//Addedby <JAYANT PRAKASH> for <2269>
+				else if (this.selectedCat === "Cushion") {
+					payload = {
+						"Accountno": removePriceData[0].ACCOUNT__C,
+						"Productcategory": this.selectedCat,
+						"Productuniquekey": removePriceData[0].PRODUCT_UNIQUE_KEY__C,
+						"Whcode": this.selectedWH,
+						"Cplpriceid": removePriceData[0].CPL_PRICE_ID__C,
+						"Startdate": startDate,
+						"Enddate": endDate,
+						"Cplrecordid": "",
+						"Approvalstatus": "",
+						"Justification": "",
+						"Promocode": "",
+						"Modifiedby": "",
+						"Reqbillprice": 0,
+						"Reqnetprice": 0
+					};
+				}
+				//Addedby <JAYANT PRAKASH> for <2269>
 				sap.ui.getCore().busyIndicator.open();
 				$.ajax({
 					url: removeUrl,
@@ -3530,6 +5024,7 @@ sap.ui.define([
 					data: JSON.stringify(payload),
 					success: function (response) {
 						console.log(response);
+						that.getView().getModel("pViewModel").setData(undefined);
 						that.fetchProducts();
 						MessageBox.success("Success! Record is removed from Submission");
 						sap.ui.getCore().busyIndicator.close();
@@ -3546,8 +5041,7 @@ sap.ui.define([
 		//Start of Edit Limited Price
 		onItemEditLimited: function (oEvent) {
 			var selectedRow = oEvent.getSource().getParent().getParent().getParent();
-			var selectedRow = oEvent.getSource().getParent().getParent().getParent();
-			var editLimitedData = {
+			var editData = {
 				"cell1": selectedRow.getAggregation("cells")[1].getText(),
 				"cell2": selectedRow.getAggregation("cells")[2].getText(),
 				"cell3": selectedRow.getAggregation("cells")[3].getText(),
@@ -3556,20 +5050,20 @@ sap.ui.define([
 				"cell6": selectedRow.getAggregation("cells")[6].getText(),
 				"cell7": selectedRow.getAggregation("cells")[7].getText()
 			}
-			this.editLimitedData = editLimitedData;
+			this.editData = editData;
 
 			var pViewModel = this.getView().getModel("pViewModel");
 			var pViewData = pViewModel.getData();
 
 			var that = this;
 			this.isLimitedTimeRecord = pViewData.filter(function (a) {
-				return a.PRODUCT_STYLE_NUMBER__C === that.editLimitedData.cell1 && a.ISLIMITEDPRICERECORD === true;
+				return a.PRODUCT_STYLE_NUMBER__C === that.editData.cell1 && a.ISLIMITEDPRICERECORD === true;
 			});
 
-			that.openDialogLimitedPrice(editLimitedData);
+			that.openDialogLimitedPrice(editData);
 		},
 
-		openDialogLimitedPrice: function (editLimitedData) {
+		openDialogLimitedPrice: function (editData) {
 			if (!this._oDialogLimitedPrice) {
 				this._oDialogLimitedPrice = sap.ui.xmlfragment("cf.cpl.fragments.EditLimitedPrice", this);
 				this.getView().addDependent(this._oDialogLimitedPrice);
@@ -3598,7 +5092,7 @@ sap.ui.define([
 			//Start of changes by <AYUGAHLO> for <4058> on <01.08.2021>
 			//sap.ui.getCore().byId("hiddenEnddate").setValue(today.toLocaleString('default', {
 			sap.ui.getCore().byId("hiddenEnddate").setValue(tomorrow.toLocaleString('default', {
-			//End of changes by <AYUGAHLO> for <4058> on <01.08.2021>	
+				//End of changes by <AYUGAHLO> for <4058> on <01.08.2021>	
 				day: "numeric",
 				month: 'long',
 				year: "numeric"
@@ -3606,7 +5100,7 @@ sap.ui.define([
 		},
 
 		OnCancelLimitedPrice: function () {
-				var dpkEnddate = sap.ui.getCore().byId("dpkEnddate").setValue("");
+			var dpkEnddate = sap.ui.getCore().byId("dpkEnddate").setValue("");
 			this._oDialogLimitedPrice.close();
 			//	this.fetchProducts();
 		},
@@ -3641,7 +5135,7 @@ sap.ui.define([
 				dpkEnddate.setValueState("None");
 			}
 
-			if (new Date(dpkStartdate.getValue()) < new Date()) {
+			if (new Date(dpkStartdate.getValue()) < new Date(new Date().toDateString())) {
 				errormsg.setVisible(true);
 				errormsg.setText("Start date should be greater then today");
 				return false;
@@ -3649,7 +5143,7 @@ sap.ui.define([
 				errormsg.setVisible(true);
 				errormsg.setText("End date should not be less then Start date");
 				return false;
-			} else if (new Date(dpkEnddate.getValue()) > currDate) {
+			} else if (new Date(dpkEnddate.getValue()) > new Date(currDate.toDateString())) {
 				errormsg.setVisible(true);
 				errormsg.setText("End date should not be more than 1 year");
 				return false;
@@ -3691,7 +5185,7 @@ sap.ui.define([
 
 			this._oDialogLimitedPrice.close();
 			that.afterCloseLimitedPrice();
-			that.openDialogPgSurface(this.editLimitedData);
+			that.openDialogPgSurface(this.editData);
 			this.showbackbtn("1");
 		},
 
@@ -3733,7 +5227,8 @@ sap.ui.define([
 			this._oDialogPGsurface.close();
 			that.afterClosePGSurface();
 			that.openDialogLimitedPrice();
-			var dpkEnddate = sap.ui.getCore().byId("dpkEnddate").setValue(this.EndDate);
+			var dpkStartdate = sap.ui.getCore().byId("dpkStartdate").setValue(that.dpkStartdate);
+			var dpkEnddate = sap.ui.getCore().byId("dpkEnddate").setValue(that.dpkEnddate);
 		},
 
 		//End of Edit Limited Price
@@ -3811,8 +5306,14 @@ sap.ui.define([
 			var oTable2 = this.getView().byId("list2");
 
 			if (this.accNo !== "" && this.accNo !== undefined) {
-				var url = "pricing/GBSCPLview.xsjs?globalsearchKey=" + sQuery + "&Productcategory=" + this.selectedCat + "&accountNo1=" + this.accNo +
-					"&accountNo2=NA&$format=json";
+				if (this.accNo.split(".")[2] !== "0000") {
+					this.preAcc = this.accNo.replace(this.accNo.split(".")[2], "0000");
+					var url = "pricing/GBSCPLview.xsjs?globalsearchKey=" + sQuery + "&Productcategory=" + this.selectedCat + "&accountNo1=" + this.accNo +
+						"&accountNo2=" + this.preAcc + "&$format=json";
+				} else {
+					var url = "pricing/GBSCPLview.xsjs?globalsearchKey=" + sQuery + "&Productcategory=" + this.selectedCat + "&accountNo1=" + this.accNo +
+						"&accountNo2=NA&$format=json";
+				}
 			} else {
 				var url = "pricing/GBSCPLview.xsjs?globalsearchKey=" + sQuery + "&Productcategory=" + this.selectedCat +
 					"&accountNo1=NA&accountNo2=NA&$format=json";
@@ -3901,7 +5402,7 @@ sap.ui.define([
 							for (var k = 0; k < allBrands.length; k++) {
 								if (brandData[i].brand === allBrands[k].BRAND_CODE__C) {
 									for (var l = 0; l < temSales.length; l++) {
-										if (temSales[l].SALES_CHANNEL__C === allBrands[k].SALES_CHANNEL__C) {
+										if (temSales[l].channel === allBrands[k].SALES_CHANNEL__C) {
 											chnlAdded = true;
 										}
 									}
@@ -4012,7 +5513,7 @@ sap.ui.define([
 		 * @param {sap.ui.base.Event} oEvent the button press event
 		 * @public
 		 */
-		onSortDialog: function (oEvent) {
+		/*onSortDialog: function (oEvent) {
 			var sDialogTab = "sort";
 
 			var headerData = sap.ui.getCore().getModel("configModel").getProperty("/mHeader");
@@ -4056,7 +5557,7 @@ sap.ui.define([
 
 			// apply the selected sort and group settings
 			oBinding.sort(aSorters);
-		},
+		},*/
 
 		/**
 		 * Event handler called when ViewSettingsDialog has been confirmed, i.e.
@@ -4086,6 +5587,13 @@ sap.ui.define([
 			this.getView().byId("masterPage").setVisible(false);
 			this.getView().byId("masterPage2").setVisible(true);
 			this._oList = this.byId("list2");
+
+			var width = oEvent.getSource()._oContextualSettings.contextualWidth;
+			if (width > 700) {
+				var selectedIndex = oEvent.getSource().getBindingContextPath().slice(1);
+				this._oList.getItems()[selectedIndex].setSelected(true);
+			}
+
 			var oList = oEvent.getSource(),
 				bSelected = oEvent.getParameter("selected");
 
@@ -4124,10 +5632,10 @@ sap.ui.define([
 		 * We navigate back in the browser historz
 		 * @public
 		 */
-		onNavBack: function () {
+		/*onNavBack: function () {
 			// eslint-disable-next-line sap-no-history-manipulation
 			history.go(-1);
-		},
+		},*/
 
 		/* =========================================================== */
 		/* begin: internal methods                                     */
@@ -4146,6 +5654,15 @@ sap.ui.define([
 		},
 
 		_onMasterMatched: function (oEvent) {
+			this.fetchTotal = 100; //`Top` variable in teh ajax call
+			this.fetchSkip = 0;
+			this.getBlackProduct = false;
+			this.completeResult = false;
+			this.mainData = [];
+			this.getView().byId("masterPage").setVisible(true);
+			this.getView().byId("masterPage2").setVisible(false);
+			sap.ui.getCore().getModel("configModel").setProperty("/multiPricing", false);
+
 			//Set the layout property of the FCL control to 'OneColumn'
 			this.getModel("appView").setProperty("/layout", "OneColumn");
 			var width = this.getView()._oContextualSettings.contextualWidth;
@@ -4154,12 +5671,16 @@ sap.ui.define([
 				this.getView().byId("masterPage2").setVisible(false);
 				this.getView().byId("masterPage").setVisible(true);
 				this.getView().byId("searchField3").setValue("");
-				this.bindRecords();
+				//Chnages by diksha - bug 4671- 9/2/2021//
+				this.fetchProducts(); // uncommented by Saurabh - bug 4940 - 17/02/2021
+				// this.bindRecords();
 			} else {
 				this._oList = this.byId("list2");
 				this.getView().byId("masterPage2").setVisible(true);
 				this.getView().byId("masterPage").setVisible(false);
 			}
+			
+			this.getView().setModel(sap.ui.getCore().getModel("configModel"), "editModelAccount");
 		},
 
 		/**
@@ -4183,7 +5704,7 @@ sap.ui.define([
 			if (width) {
 				if (width < 700) {
 					var that = this;
-					var selected = priceData.filter(function (a) {
+					/*var selected = priceData.filter(function (a) {
 						if (a[h0] === undefined || a[h0] === null) {
 							a[h0] = "";
 						}
@@ -4199,13 +5720,18 @@ sap.ui.define([
 						return a[h0] === oItem.getNumber() && a[h1] === oItem.getTitle() && a[h2] === oItem
 							.getIntro() && a[h3] === oItem.getNumberUnit();
 					});
+					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);*/
+					var selectedID = oItem.getAggregation("attributes")[5].getText();
+					var selected = priceData.filter(function (a) {
+						return a["CPL_PRICE_ID__C"] === selectedID;
+					});
 					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);
-
 					this.getRouter().navTo("object", {
-						objectId: oItem.getNumber()
+						// objectId: oItem.getNumber()
+						objectId: selectedID
 					}, bReplace);
 				} else {
-					var selected = priceData.filter(function (a) {
+					/*var selected = priceData.filter(function (a) {
 						if (a[h0] === undefined || a[h0] === null) {
 							a[h0] = "";
 						}
@@ -4221,15 +5747,22 @@ sap.ui.define([
 						return a[h0] === oItem.getAggregation("cells")[1].getText() && a[h1] === oItem.getAggregation("cells")[2].getText() && a[
 							h2] === oItem.getAggregation("cells")[3].getText() && a[h3] === oItem.getAggregation("cells")[4].getText();
 					});
+					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);*/
+					var cells = oItem.getAggregation("cells");
+					var selectedID = cells[cells.length - 1].getText();
+					var selected = priceData.filter(function (a) {
+						return a["CPL_PRICE_ID__C"] === selectedID;
+					});
 					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);
 					this.getRouter().navTo("object", {
-						objectId: oItem.getAggregation("cells")[1].getText()
+						// 						objectId: oItem.getAggregation("cells")[1].getText()
+						objectId: selectedID
 							// path: path
 					}, bReplace);
 				}
 			} else {
 				if (this.getView().byId("masterPage2").getVisible()) {
-					var selected = priceData.filter(function (a) {
+					/*var selected = priceData.filter(function (a) {
 						if (a[h0] === undefined || a[h0] === null) {
 							a[h0] = "";
 						}
@@ -4245,12 +5778,19 @@ sap.ui.define([
 						return a[h0] === oItem.getNumber() && a[h1] === oItem.getTitle() && a[h2] === oItem
 							.getIntro() && a[h3] === oItem.getNumberUnit();
 					});
+					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);*/
+					var selectedID = oItem.getAggregation("attributes")[5].getText();
+					var selected = priceData.filter(function (a) {
+						return a["CPL_PRICE_ID__C"] === selectedID;
+					});
 					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);
+
 					this.getRouter().navTo("object", {
-						objectId: oItem.getNumber()
+						// 						objectId: oItem.getNumber()
+						objectId: selectedID
 					}, bReplace);
 				} else {
-					var selected = priceData.filter(function (a) {
+					/*var selected = priceData.filter(function (a) {
 						if (a[h0] === undefined || a[h0] === null) {
 							a[h0] = "";
 						}
@@ -4266,9 +5806,16 @@ sap.ui.define([
 						return a[h0] === oItem.getAggregation("cells")[1].getText() && a[h1] === oItem.getAggregation("cells")[2].getText() && a[
 							h2] === oItem.getAggregation("cells")[3].getText() && a[h3] === oItem.getAggregation("cells")[4].getText();
 					});
+					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);*/
+					var cells = oItem.getAggregation("cells");
+					var selectedID = cells[cells.length - 1].getText();
+					var selected = priceData.filter(function (a) {
+						return a["CPL_PRICE_ID__C"] === selectedID;
+					});
 					sap.ui.getCore().getModel("configModel").setProperty("/selectedItem", selected[0]);
 					this.getRouter().navTo("object", {
-						objectId: oItem.getAggregation("cells")[1].getText()
+						// 						objectId: oItem.getAggregation("cells")[1].getText()
+						objectId: selectedID
 							// path: path
 					}, bReplace);
 				}
@@ -4290,18 +5837,19 @@ sap.ui.define([
 		sortTHeader: function (objA, objB) {
 			return objA.key - objB.key;
 		},
-		loadOnScroll: function (e) {
+		/*loadOnScroll: function (e) {
 			if ($(this).scrollTop() + $(this).innerHeight() >= $(this)[0].scrollHeight) {
 				console.log('This is the bottom of the container');
-				if (this.globalSearch === false) {
+				if (this.globalSearch === false || this.globalSearch === undefined) {
 					if (e.data.g.endResult === false) {
-						e.data.g.fetchTotal = e.data.g.fetchTotal + 100;
+						// e.data.g.fetchTotal = e.data.g.fetchTotal + 100;
+						e.data.g.fetchTotal = 100;
 						e.data.g.fetchSkip = e.data.g.fetchSkip + 100;
 						e.data.g.fetchProducts();
 					}
 				}
 			}
-		},
+		},*/
 
 		//To Set Comments Value state to Success
 
@@ -4313,12 +5861,129 @@ sap.ui.define([
 			lblcommenterrmsg.setVisible(false);
 
 		},
-		
-		
+
 		// Add new Product 
-		onAddProduct: function() {
+		onAddProduct: function () {
 			this.getRouter().navTo("addProduct");
-		}
+		},
+
+		// Submit
+		onSubmit: function () {
+			var draftRecords = this.draftRecords;
+
+			// https://ixlryfkpyzukuvll-pricing-pricing.cfapps.eu10.hana.ondemand.com/CPLApprover.xsjs?
+			//		Accountno=R.100001.0153&Productuniquekey=R.2B79.T3.2424P&Whcode=AND&Cplpriceid=9D1F4F850D84D06AF57B7183D068998B2B6855B6
+			//		&Bgnumber=&Cplrecordid=1607502622592&Justification=3&Productcategory=Residential%20Broadloom&Lastmodifiedby=ralph_wingate@mohawkind.com
+			//		&Reqrollprice=11.91&Reqcutprice=13.2&Reqcartonprice=&Currentstatus=1&IMdmapprover=&IMrvpapprover&IMpmapprover=&Currentuser=ralph_wingate@mohawkind.com
+			var that = this;
+			/*var accNo = "";
+			if(this.accNo !== undefined) {
+				accNo = this.accNo;
+			}*/
+
+			var dateFormat = sap.ui.core.format.DateFormat.getDateInstance({
+				pattern: "yyyy-MM-dd"
+			});
+
+			function convertDate(date) {
+				if (date.split("(").length > 1) {
+					var startdate = date.split("(")[1].split(")")[0];
+					return dateFormat.format(new Date(parseInt(startdate)));
+				} else {
+					return ""
+				};
+			}
+
+			for (var i = 0; i < draftRecords.length; i++) {
+				if (i === draftRecords.length - 1) {
+					var subStartDate = convertDate(draftRecords[i].EDIT_START_DATE);
+					var subEndDate = convertDate(draftRecords[i].EDIT_END_DATE);
+					var url = "pricing/CPLApprover.xsjs?Accountno=" + draftRecords[i].ACCOUNT__C + "&Productuniquekey=" + draftRecords[i].PRODUCT_UNIQUE_KEY__C +
+						"&Whcode=" + draftRecords[i].WAREHOUSE_CODE__C + "&Cplpriceid=" + draftRecords[i].CPL_PRICE_ID__C + "&Bgnumber=" + draftRecords[
+							0]
+						.BUYING_GROUP_NUMBER__C + "&Cplrecordid=" + draftRecords[i].CPL_RECORD_ID + "&Justification=&Productcategory=" + this.selectedCat +
+						"&Lastmodifiedby=" + draftRecords[i].MODIFIED_BY__C + "&Reqrollprice=" + draftRecords[i].REQUESTED_BILLING_PRICE_ROLL__C +
+						"&Reqcutprice=" + draftRecords[i].REQUESTED_BILLING_PRICE_CUT__C + "&Reqcartonprice=" + draftRecords[i].REQUESTED_BILLING_PRICE_CARTON__C +
+						"&Currentstatus=" + draftRecords[i].APPROVAL_STATUS__C +
+						"&IMdmapprover=&IMrvpapprover=&IMpmapprover=&Currentuser=" + this.loggedInUser + "&Userrole=" + this.empRole +
+						"&Startdate=" + subStartDate + "&Enddate=" + subEndDate;
+					$.ajax({
+						url: url,
+						contentType: "application/json",
+						method: "POST",
+						async: false,
+						// data: JSON.stringify(payload),
+						success: function (response) {
+							console.log(response);
+							that.getView().getModel("pViewModel").setData(undefined);
+							that.fetchProducts();
+						},
+						error: function (error) {
+							console.log(error);
+						}
+					});
+				} else {
+					var subStartDate = convertDate(draftRecords[i].EDIT_START_DATE);
+					var subEndDate = convertDate(draftRecords[i].EDIT_END_DATE);
+					var url = "pricing/CPLApprover.xsjs?Accountno=" + draftRecords[i].ACCOUNT__C + "&Productuniquekey=" + draftRecords[i].PRODUCT_UNIQUE_KEY__C +
+						"&Whcode=" + draftRecords[i].WAREHOUSE_CODE__C + "&Cplpriceid=" + draftRecords[i].CPL_PRICE_ID__C + "&Bgnumber=" + draftRecords[
+							0]
+						.BUYING_GROUP_NUMBER__C + "&Cplrecordid=" + draftRecords[i].CPL_RECORD_ID + "&Justification=&Productcategory=" + this.selectedCat +
+						"&Lastmodifiedby=" + draftRecords[i].MODIFIED_BY__C + "&Reqrollprice=" + draftRecords[i].REQUESTED_BILLING_PRICE_ROLL__C +
+						"&Reqcutprice=" + draftRecords[i].REQUESTED_BILLING_PRICE_CUT__C + "&Reqcartonprice=" + draftRecords[i].REQUESTED_BILLING_PRICE_CARTON__C +
+						"&Currentstatus=" + draftRecords[i].APPROVAL_STATUS__C +
+						"&IMdmapprover=&IMrvpapprover=&IMpmapprover=&Currentuser=" + this.loggedInUser + "&Userrole=" + this.empRole +
+						"&Startdate=" + subStartDate + "&Enddate=" + subEndDate;
+					$.ajax({
+						url: url,
+						contentType: "application/json",
+						method: "POST",
+						async: false,
+						// data: JSON.stringify(payload),
+						success: function (response) {
+							console.log(response);
+						},
+						error: function (error) {
+							console.log(error);
+						}
+					});
+				}
+			}
+
+		},
+
+		/*Start of Multi Edit Price */
+		onMultiprice: function (oEvent) {
+			if (!this._oDialogMultiPricing) {
+				this._oDialogMultiPricing = sap.ui.xmlfragment("cf.cpl.fragments.MultiPricingDialog", this);
+				this.getView().addDependent(this._oDialogMultiPricing);
+			}
+
+			this._oDialogMultiPricing.open();
+			var that = this;
+			//that.onMultiSurfaceBtnChange();
+		},
+
+		onCancelMultiPricingDialog: function () {
+			this._oDialogMultiPricing.close();
+		},
+
+		afterCloseMultiPricingDialog: function () {
+			if (this._oDialogMultiPricing) {
+				this._oDialogMultiPricing.destroy();
+				this._oDialogMultiPricing = null;
+			}
+		},
+
+		onPressbtnMultiPricing: function (oEvent) {
+				var multiEditType = oEvent.getSource().getText();
+				sap.ui.getCore().getModel("configModel").setProperty("/multiEditType", multiEditType);
+				var that = this;
+				that.getRouter().navTo("multiEdit");
+				this._oDialogMultiPricing.close();
+			}
+			/*End of Multi Edit Price */
+
 	});
 
 });
